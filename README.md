@@ -17,11 +17,11 @@
                       onchange={(evt) => changeAttributes({'name': evt.currentTarget.value})}
                     />
                   }</entities.user.Item>
-                  <BranchActions>{commit =>
+                  <BranchActions>{({commit}) =>
                     <button
                       onclick={commit}
                     />
-                  }</BranchAction>
+                  }</BranchActions>
                 </>
             }
           }<entities.blogPost.Item>
