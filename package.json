@@ -1,0 +1,41 @@
+{
+	"name": "@plusnew/state",
+	"version": "0.1.0",
+	"description": "library for doing complext statemanagement in plusnew",
+	"main": "src/index.tsx",
+	"module": "src/index.tsx",
+	"scripts": {
+		"prepublishOnly": "yarn run test --no-cache",
+		"test": "jest --coverage",
+		"test:watch": "jest --watch"
+	},
+	"keywords": [
+		"plusnew"
+	],
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/plusnew-state/plusnew.git"
+	},
+	"author": "Carlo Jeske",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/plusnew-state/plusnew/issues"
+	},
+	"dependencies": {},
+	"devDependencies": {
+		"@plusnew/core": "^1.0.2",
+		"@plusnew/driver-dom": "1.0.2",
+		"@plusnew/enzyme-adapter": "^1.0.0",
+		"@types/jest": "^25.1.4",
+		"@typescript-eslint/eslint-plugin": "^2.27.0",
+		"@typescript-eslint/parser": "^2.27.0",
+		"enzyme": "^3.11.0",
+		"eslint": "^6.8.0",
+		"eslint-config-prettier": "^6.10.1",
+		"eslint-plugin-prettier": "^3.1.2",
+		"jest": "^25.1.0",
+		"prettier": "^2.0.4",
+		"ts-jest": "^25.3.1",
+		"typescript": "^3.8.3"
+	}
+}
