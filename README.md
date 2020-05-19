@@ -3,9 +3,9 @@
 ````jsx
   <Repository>
     <Branch>{({entities, commit}) =>
-      <entities.blogPosts.List parameter={{ sort: 'ascending' }}>{({isLoading, blogPostIds}) =>
+      <entities.blogPost.List parameter={{ sort: 'ascending' }}>{({isLoading, blogPostIds}) =>
         {blogPostIds.map(blogPostId =>
-          <entities.blogPosts.Item key={blogPostId}>{({isLoading, item: blogPost}) =>
+          <entities.blogPost.Item key={blogPostId}>{({isLoading, item: blogPost}) =>
             {isLoading
               ? 'loading'
               :
@@ -22,9 +22,9 @@
                   />
                 </>
             }
-          }<entities.blogPosts.Item>
+          }<entities.blogPost.Item>
         )}
-      }</entities.blogPosts.List>
+      }</entities.blogPost.List>
     }</Branch
   </Repository>
 ````
