@@ -380,10 +380,10 @@
     "@types/yargs" "^15.0.0"
     chalk "^3.0.0"
 
-"@plusnew/core@^1.0.2":
-  version "1.0.3"
-  resolved "https://registry.yarnpkg.com/@plusnew/core/-/core-1.0.3.tgz#a62206c201f2d3175846c3b1311eee8932e1ccaa"
-  integrity sha512-+XYfXfg++LdnqQ0VkUhX36C8f5K4Mcq4RS0TSeTSqqk1oj+dMT3cn7LlqhTOclLhRt2i/9PHp3YGCVVU9IQYZA==
+"@plusnew/core@^1.3.0":
+  version "1.3.0"
+  resolved "https://registry.yarnpkg.com/@plusnew/core/-/core-1.3.0.tgz#270dd20e2780f39b7cf04cc2f27218e9d6acf6ce"
+  integrity sha512-vtWeA807VzB8KkP6D6R+84FWsuhk5Y384mYg0PJjABW+zjmN2LrX/XOBOwBSx6MYQQG+IZMbfP+7zhjcPdsr/Q==
 
 "@plusnew/driver-dom@1.0.2":
   version "1.0.2"
