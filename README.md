@@ -17,6 +17,9 @@
                       onchange={(evt) => changeAttributes({'name': evt.currentTarget.value})}
                     />
                   }</entities.user.Item>
+                  <button
+                    onclick={commit}
+                  />
                 </>
             }
           }<entities.blogPosts.Item>
