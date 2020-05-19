@@ -2,7 +2,7 @@
 
 ````jsx
   <Repository>
-    <Branch>{({entities, commit}) =>
+    <Branch>
       <entities.blogPost.List parameter={{ sort: 'ascending' }}>{({isLoading, itemIds: blogPostIds}) =>
         {blogPostIds.map(blogPostId =>
           <entities.blogPost.Item key={blogPostId}>{(blogPostItemView) =>
@@ -17,15 +17,17 @@
                       onchange={(evt) => changeAttributes({'name': evt.currentTarget.value})}
                     />
                   }</entities.user.Item>
-                  <button
-                    onclick={commit}
-                  />
+                  <BranchActions>{commit =>
+                    <button
+                      onclick={commit}
+                    />
+                  }</BranchAction>
                 </>
             }
           }<entities.blogPost.Item>
         )}
       }</entities.blogPost.List>
-    }</Branch>
+    </Branch>
   </Repository>
 ````
 
