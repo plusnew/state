@@ -5,7 +5,7 @@
     <Branch>{({entities, commit}) =>
       <entities.BlogPosts.List parameter={{ sort: 'ascending' }}>{({isLoading, blogPostIds}) =>
         {blogPostIds.map(blogPostId =>
-          <entities.BlogPosts.Item id={blogPostId}>{({isLoading, item: blogPost}) =>
+          <entities.BlogPosts.Item key={blogPostId}>{({isLoading, item: blogPost}) =>
             {isLoading
               ? 'loading'
               :
