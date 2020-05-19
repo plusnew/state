@@ -25,7 +25,7 @@
           }<entities.blogPost.Item>
         )}
       }</entities.blogPost.List>
-    }</Branch
+    }</Branch>
   </Repository>
 ````
 
