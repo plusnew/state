@@ -65,7 +65,7 @@ export default component(
                         value={author?.attributes.name}
                         onchange={(evt) => changeAttributes({'name': evt.currentTarget.value})}
                       />
-                    }</entities.user.Item>
+                    }</Item>
                     <BranchActions>{({commit}) =>
                       <button
                         onclick={commit}
