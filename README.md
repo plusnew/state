@@ -52,8 +52,8 @@ export default component(
       }}
     >
       <Branch>
-        <List type="blogPost" parameter={{ sort: 'ascending' }}>{({isLoading, items: blogPost}) =>
-          {blogPost.map(blogPost =>
+        <List type="blogPost" parameter={{ sort: 'ascending' }}>{({isLoading, items: blogPosts}) =>
+          {blogPosts.map(blogPost =>
             <Item type="blogPost" id={blogPost.id}>{(blogPostItemView) =>
               {blogPostItemView.isLoading
                 ? 'loading'
