@@ -1,4 +1,4 @@
-import plusnew, { component, store, Try } from "@plusnew/core";
+import plusnew from "@plusnew/core";
 import enzymeAdapterPlusnew, { mount } from "@plusnew/enzyme-adapter";
 import { configure } from "enzyme";
 import stateFactory from "./index";
@@ -7,36 +7,43 @@ configure({ adapter: new enzymeAdapterPlusnew() });
 
 describe("test statefactory", () => {
   it("foo", async () => {
-    const state = stateFactory({
-      entities: {
-        user: {
-          list: {
-            read: () => Promise.resolve([]),
-          },
-          item: {
-            create: (entity) => Promise.resolve(entity),
-            read: () =>
-              Promise.resolve({
-                id: "23",
-                attribitues: {
-                  foo: "bar",
-                },
-                relationships: {
-                  parent: {
-                    id: "one",
-                  },
-                  friends: [
-                    {
-                      id: "another",
-                    },
-                  ],
-                },
-              }),
-            update: ({ changedAttributes }) => Promise.resolve({}),
-            delete: (entity) => Promise.resolve(entity),
-          },
-        },
-      },
-    });
+    const { Repository, Branch, Item, List } = stateFactory<{
+      blogPost: {
+        listParameter: {
+          sort: "asc" | "desc";
+        };
+        item: {
+          id: string;
+          attributes: {
+            name: string;
+          };
+          relationships: {};
+        };
+      };
+    }>();
+
+    const wrapper = mount(
+      <Repository>
+        <Branch>
+          <List type="blogPost" parameter={{ sort: "asc" }}>
+            {(listState) =>
+              listState.items.map((item) => (
+                <Item<"blogPost"> type="blogPost" id={item.id}>
+                  {(view) =>
+                    view.isLoading ? (
+                      <span>loading</span>
+                    ) : (
+                      view.item.attributes.name
+                    )
+                  }
+                </Item>
+              ))
+            }
+          </List>
+        </Branch>
+      </Repository>
+    );
+
+    wrapper;
   });
 });
