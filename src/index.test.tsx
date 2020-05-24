@@ -5,10 +5,35 @@ import stateFactory from "./index";
 
 configure({ adapter: new enzymeAdapterPlusnew() });
 
-async function tick(count: number) {
-  for (let i = 0; i < count; i += 1) {
-    await new Promise((resolve) => resolve());
-  }
+type blogPostType = {
+  id: string;
+  model: "blogPost";
+  attributes: {
+    name: string;
+  };
+  relationships: {};
+};
+
+function promiseHandler<T, U>(cb: (data: T) => U) {
+  const cbs: any = [];
+  const datas: U[] = [];
+  const promises: Promise<U>[] = [];
+  return {
+    fn: jest.fn((data: T) => {
+      datas.push(cb(data));
+      promises.push(
+        new Promise<U>((resolve) => cbs.push(resolve))
+      );
+      return promises[promises.length - 1];
+    }),
+    resolve: () =>
+      Promise.all(
+        promises.map((promise, index) => {
+          cbs[index](datas[index]);
+          return promise;
+        })
+      ),
+  };
 }
 
 describe("test statefactory", () => {
@@ -18,44 +43,46 @@ describe("test statefactory", () => {
         listParameter: {
           sort: "asc" | "desc";
         };
-        item: {
-          id: string;
-          model: "blogPost";
-          attributes: {
-            name: string;
-          };
-          relationships: {};
-        };
+        item: blogPostType;
       };
     }>();
+
+    const list = promiseHandler(
+      (req: {
+        model: "blogPost";
+        parameter: {
+          sort: "asc" | "desc";
+        };
+      }) => ({
+        items: [
+          {
+            id: "1",
+            model: req.model,
+          },
+          {
+            id: "2",
+            model: req.model,
+          },
+        ],
+        totalCount: 5,
+      })
+    );
+
+    const item = promiseHandler((req: { model: "blogPost"; id: string }) => ({
+      id: req.id,
+      model: req.model,
+      attributes: {
+        name: `foo-${req.id}`,
+      },
+      relationships: {},
+    }));
 
     const wrapper = mount(
       <Repository
         requests={{
           read: {
-            list: (req) =>
-              Promise.resolve({
-                items: [
-                  {
-                    id: "1",
-                    model: req.model,
-                  },
-                  {
-                    id: "2",
-                    model: req.model,
-                  },
-                ],
-                totalCount: 5,
-              }),
-            item: (req) =>
-              Promise.resolve({
-                id: req.id,
-                model: req.type,
-                attributes: {
-                  name: `foo-${req.id}`,
-                },
-                relationships: {},
-              }),
+            list: list.fn,
+            item: item.fn,
           },
         }}
       >
@@ -85,16 +112,16 @@ describe("test statefactory", () => {
     expect(wrapper.contains(<div>list-loading</div>)).toBe(true);
     expect(wrapper.contains(<span>item-loading</span>)).toBe(false);
 
-    await tick(1);
+    await list.resolve();
 
     expect(wrapper.contains(<div>list-loading</div>)).toBe(false);
     expect(wrapper.contains(<span>item-loading</span>)).toBe(true);
 
-    await tick(1);
+    await item.resolve();
 
     expect(wrapper.contains(<div>list-loading</div>)).toBe(false);
     expect(wrapper.contains(<span>item-loading</span>)).toBe(false);
-    expect(wrapper.contains(<span>foo-1</span>));
-    expect(wrapper.contains(<span>foo-2</span>));
+    expect(wrapper.contains(<span>foo-1</span>)).toBe(true);
+    expect(wrapper.contains(<span>foo-2</span>)).toBe(true);
   });
 });

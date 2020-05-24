@@ -16,7 +16,7 @@ type asyncReadListRequest<
 type asyncReadItemRequest<
   T extends entitiesContainerTemplate,
   U extends keyof T
-> = (request: { type: U; id: string }) => Promise<T[U]["item"]>;
+> = (request: { model: U; id: string }) => Promise<T[U]["item"]>;
 
 type props<T extends entitiesContainerTemplate> = {
   children: ApplicationElement;
@@ -28,9 +28,16 @@ type props<T extends entitiesContainerTemplate> = {
   };
 };
 
-type entity<T extends entitiesContainerTemplate, U extends keyof T> = {
+type storeEntity<T extends entitiesContainerTemplate, U extends keyof T> = {
   isDeleted: false;
   payload: T[U]["item"];
+};
+
+type storeList = {
+  [query: string]: {
+    ids: string[];
+    totalCount: number;
+  };
 };
 
 type syncReadListRequest<
@@ -43,7 +50,7 @@ type syncReadListRequest<
   | {
       hasCache: true;
       isLoading: boolean;
-      items: T[U]["item"][] | entityEmpty<U>[];
+      items: entityEmpty<U>[];
       totalCount: number;
     }
   | {
@@ -58,45 +65,53 @@ type syncReadItemRequest<
   model: U;
   id: string;
 }) =>
-  | { hasCache: true; isLoading: boolean; item: T[U]["item"] }
+  | { hasCache: true; isLoading: boolean; item: storeEntity<T, U> }
   | { hasCache: false; isLoading: boolean };
 
 export type repositoryState<T extends entitiesContainerTemplate> = {
-  entities: Partial<
-    {
-      [model in keyof T]: {
-        [id: string]: entity<T, model>;
-      };
-    }
-  >;
-  lists: Partial<
-    {
-      [model in keyof T]: {
-        [parameter: string]:
-          | {
-              ids: string[];
-              totalCount: number;
-            }
-          | {
-              error: any;
-            };
-      };
-    }
-  >;
+  entities: {
+    [model in keyof T]?: {
+      [id: string]: storeEntity<T, model>;
+    };
+  };
+  lists: {
+    [model in keyof T]?: storeList;
+  };
   getListCache: syncReadListRequest<T, keyof T>;
   getItemCache: syncReadItemRequest<T, keyof T>;
-  fetchList: () => null;
-  fetchItem: () => null;
+  fetchList: asyncReadListRequest<T, keyof T>;
+  fetchItem: asyncReadItemRequest<T, keyof T>;
 };
 
-type insertAction<T extends entitiesContainerTemplate> = {
+type insertItemsAction<T extends entitiesContainerTemplate> = {
   type: "INSERT_ITEMS";
-  payload: [entity<T, keyof T>];
+  payload: {
+    [model in keyof T]?: {
+      [id: string]: storeEntity<T, model>;
+    };
+  };
 };
 
-export type repositoryActions<
-  T extends entitiesContainerTemplate
-> = insertAction<T>;
+type insertListAction<
+  T extends entitiesContainerTemplate,
+  U extends keyof T
+> = {
+  type: "INSERT_LIST";
+  model: U;
+  query: string;
+  payload: {
+    items: (T[U]["item"] | entityEmpty<U>)[];
+    totalCount: number;
+  };
+};
+
+export type repositoryActions<T extends entitiesContainerTemplate> =
+  | insertItemsAction<T>
+  | insertListAction<T, keyof T>;
+
+function getQueryAsString(parameter: Record<string, unknown>) {
+  return JSON.stringify(parameter);
+}
 
 export default <T extends entitiesContainerTemplate>(
   context: Context<repositoryState<T>, repositoryActions<T>>
@@ -104,29 +119,112 @@ export default <T extends entitiesContainerTemplate>(
   class Repository extends Component<props<T>> {
     static displayName = __dirname;
     render(Props: Props<props<T>>) {
+      let loadingLists: [keyof T, string][] = [];
+      let loadingItems: [keyof T, string][] = [];
+
       // Returns ids, in case cache is present
-      const getListCache: syncReadListRequest<T, keyof T> = () => {
+      const getListCache: syncReadListRequest<T, keyof T> = (request) => {
+        const queryString = getQueryAsString(request.parameter);
+
+        const repositoryState = repository.getState();
+        const isLoading =
+          loadingLists.find(
+            ([model, query]) => model === request.model && query === queryString
+          ) !== undefined;
+
+        if (
+          repositoryState.lists[request.model] !== undefined &&
+          queryString in repositoryState.lists[request.model]
+        ) {
+          const result = (repositoryState.lists[request.model] as storeList)[
+            queryString
+          ];
+
+          return {
+            hasCache: true,
+            isLoading,
+            items: result.ids.map((id) => ({
+              id: id,
+              model: request.model,
+            })),
+            totalCount: result.totalCount,
+          };
+        }
         return {
           hasCache: false,
-          isLoading: false,
+          isLoading: isLoading,
         };
       };
       // Returns item in case cache is present
-      const getItemCache: syncReadItemRequest<T, keyof T> = () => {
+      const getItemCache: syncReadItemRequest<T, keyof T> = (request) => {
+        const isLoading =
+          loadingItems.find(
+            ([model, id]) => model === request.model && id === request.id
+          ) !== undefined;
+
+        const repositoryState = repository.getState();
+
+        if (
+          repositoryState.entities[request.model] !== undefined &&
+          request.id in repositoryState.entities[request.model]
+        ) {
+          return {
+            hasCache: true,
+            isLoading,
+            item: (repositoryState.entities[request.model] as any)[request.id],
+          };
+        }
         return {
           hasCache: false,
-          isLoading: false,
+          isLoading: isLoading,
         };
       };
 
       // Enforces to request new list
-      const fetchList = () => {
-        return null;
+      const fetchList: asyncReadListRequest<T, keyof T> = async (request) => {
+        const queryString = getQueryAsString(request.parameter);
+        loadingLists.push([request.model, queryString]);
+        const result = await Props.getState().requests.read.list(request);
+
+        loadingLists = loadingLists.filter(
+          ([model, query]) =>
+            (model === request.model && query === queryString) === false
+        );
+
+        repository.dispatch({
+          type: "INSERT_LIST",
+          model: request.model,
+          query: queryString,
+          payload: result,
+        });
+
+        return result;
       };
 
       // Enforces to request new item
-      const fetchItem = () => {
-        return null;
+      const fetchItem: asyncReadItemRequest<T, keyof T> = async (request) => {
+        loadingItems.push([request.model, request.id]);
+
+        const result = await Props.getState().requests.read.item(request);
+
+        loadingItems = loadingItems.filter(
+          ([model, id]) =>
+            (model === request.model && id === request.id) === false
+        );
+
+        repository.dispatch({
+          type: "INSERT_ITEMS",
+          payload: {
+            [request.model]: {
+              [result.id]: {
+                isDeleted: false,
+                payload: result,
+              },
+            },
+          },
+        } as insertItemsAction<T>);
+
+        return result;
       };
 
       const repository = store<repositoryState<T>, repositoryActions<T>>(
@@ -138,7 +236,48 @@ export default <T extends entitiesContainerTemplate>(
           fetchList,
           fetchItem,
         },
-        (previouState) => previouState
+        (previouState, action) => {
+          if (action.type === "INSERT_LIST") {
+            return {
+              entities: previouState.entities,
+              getListCache,
+              getItemCache,
+              fetchList,
+              fetchItem,
+              lists: {
+                ...previouState.lists,
+                [action.model]: {
+                  ...previouState.lists[action.model],
+                  [action.query]: {
+                    ids: action.payload.items.map((item) => item.id),
+                    totalCount: action.payload.totalCount,
+                  },
+                },
+              },
+            };
+          }
+
+          if (action.type === "INSERT_ITEMS") {
+            const newEntities = { ...previouState.entities };
+            Object.entries(action.payload).forEach(([model, items]) => {
+              newEntities[model as keyof T] = {
+                ...previouState.entities[model],
+                ...items,
+              };
+            });
+            return {
+              lists: previouState.lists,
+              getListCache,
+              getItemCache,
+              fetchList,
+              fetchItem,
+              entities: newEntities,
+            };
+          }
+
+          /* istanbul ignore next */
+          throw new Error("No such action");
+        }
       );
 
       return (

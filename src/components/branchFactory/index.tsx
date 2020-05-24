@@ -71,9 +71,11 @@ export default <T extends entitiesContainerTemplate>(
         componentInstance as Instance<any, any>
       );
 
-      const getList: syncReadListRequest<T, keyof T> = (parameter) => {
+      const getList: syncReadListRequest<T, keyof T> = (request) => {
         const repositoryState = repository.getState();
-        const result = repositoryState.getListCache(parameter);
+
+        const result = repositoryState.getListCache(request);
+
         if (result.hasCache) {
           return {
             isLoading: result.isLoading,
@@ -82,7 +84,9 @@ export default <T extends entitiesContainerTemplate>(
           };
         }
 
-        repositoryState.fetchList();
+        if (result.isLoading === false) {
+          repositoryState.fetchList(request);
+        }
 
         return {
           isLoading: true,
@@ -91,17 +95,20 @@ export default <T extends entitiesContainerTemplate>(
         };
       };
 
-      const getItem: syncReadItemRequest<T, keyof T> = (parameter) => {
+      const getItem: syncReadItemRequest<T, keyof T> = (request) => {
         const repositoryState = repository.getState();
-        const result = repositoryState.getItemCache(parameter);
+        const result = repositoryState.getItemCache(request);
+
         if (result.hasCache) {
           return {
             isLoading: result.isLoading,
-            item: result.item,
+            item: result.item.payload,
           };
         }
 
-        repositoryState.fetchItem();
+        if (result.isLoading === false) {
+          repositoryState.fetchItem(request);
+        }
 
         return {
           isLoading: true,

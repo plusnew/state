@@ -17,7 +17,7 @@ export default function factory<T extends entitiesContainerTemplate>() {
   return {
     Repository: repositoryFactory(repositoryContext),
     Branch: branchFactory(repositoryContext, branchContext),
-    List: listFactory(branchContext),
-    Item: itemFactory(branchContext),
+    List: listFactory(repositoryContext, branchContext),
+    Item: itemFactory(repositoryContext, branchContext),
   };
 }
