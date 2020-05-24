@@ -1,4 +1,4 @@
-import plusnew from "@plusnew/core";
+import plusnew, { Try } from "@plusnew/core";
 import enzymeAdapterPlusnew, { mount } from "@plusnew/enzyme-adapter";
 import { configure } from "enzyme";
 import stateFactory from "./index";
@@ -11,7 +11,7 @@ type blogPostType = {
   attributes: {
     name: string;
   };
-  relationships: {};
+  relationships: any;
 };
 
 function promiseHandler<T, U>(cb: (data: T) => U) {
@@ -34,6 +34,12 @@ function promiseHandler<T, U>(cb: (data: T) => U) {
         })
       ),
   };
+}
+
+async function tick(count: number) {
+  for (let i = 0; i < count; i += 1) {
+    await new Promise((resolve) => resolve());
+  }
 }
 
 describe("test statefactory", () => {
@@ -123,5 +129,51 @@ describe("test statefactory", () => {
     expect(wrapper.contains(<span>item-loading</span>)).toBe(false);
     expect(wrapper.contains(<span>foo-1</span>)).toBe(true);
     expect(wrapper.contains(<span>foo-2</span>)).toBe(true);
+  });
+
+  it("list fails", async () => {
+    const { Repository, Branch, List } = stateFactory<{
+      blogPost: {
+        listParameter: {
+          sort: "asc" | "desc";
+        };
+        item: blogPostType;
+      };
+    }>();
+
+    const wrapper = mount(
+      <Repository
+        requests={{
+          read: {
+            list: () => Promise.reject("nope"),
+            item: (req: { model: "blogPost"; id: string }) =>
+              Promise.resolve({
+                id: req.id,
+                model: req.model,
+                attributes: {
+                  name: `foo-${req.id}`,
+                },
+                relationships: {},
+              }),
+          },
+        }}
+      >
+        <Branch>
+          <Try catch={(error) => <span>{error}</span>}>
+            {() => (
+              <List model="blogPost" parameter={{ sort: "asc" }}>
+                {(listState) => listState.isLoading && <div>list-loading</div>}
+              </List>
+            )}
+          </Try>
+        </Branch>
+      </Repository>
+    );
+
+    expect(wrapper.contains(<div>list-loading</div>)).toBe(true);
+
+    await tick(1);
+
+    expect(wrapper.contains(<span>nope</span>)).toBe(true);
   });
 });

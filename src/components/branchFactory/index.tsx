@@ -26,11 +26,17 @@ type syncReadListRequest<
 > = (request: {
   model: U;
   parameter: T[U]["listParameter"];
-}) => {
-  isLoading: boolean;
-  items: T[U]["item"][] | entityEmpty<U>[];
-  totalCount: number;
-};
+}) =>
+  | {
+      hasError: false;
+      isLoading: boolean;
+      items: T[U]["item"][] | entityEmpty<U>[];
+      totalCount: number;
+    }
+  | {
+      hasError: true;
+      error: any;
+    };
 
 type syncReadItemRequest<
   T extends entitiesContainerTemplate,
@@ -76,8 +82,12 @@ export default <T extends entitiesContainerTemplate>(
 
         const result = repositoryState.getListCache(request);
 
+        if (result.hasError) {
+          return result;
+        }
         if (result.hasCache) {
           return {
+            hasError: false,
             isLoading: result.isLoading,
             items: result.items,
             totalCount: result.totalCount,
@@ -89,6 +99,7 @@ export default <T extends entitiesContainerTemplate>(
         }
 
         return {
+          hasError: false,
           isLoading: true,
           items: [],
           totalCount: 0,

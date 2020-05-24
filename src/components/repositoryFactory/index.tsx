@@ -2,13 +2,28 @@ import plusnew, { Component, store } from "@plusnew/core";
 import type { entitiesContainerTemplate, entityEmpty } from "../../types";
 import type { Context, ApplicationElement, Props } from "@plusnew/core";
 
+type listRequestParameter<
+  T extends entitiesContainerTemplate,
+  U extends keyof T
+> = {
+  model: U;
+  parameter: T[U]["listParameter"];
+};
+
+type itemRequestParameter<
+  T extends entitiesContainerTemplate,
+  U extends keyof T
+> = {
+  model: U;
+  id: string;
+};
+
 type asyncReadListRequest<
   T extends entitiesContainerTemplate,
   U extends keyof T
-> = (request: {
-  model: U;
-  parameter: T[U]["listParameter"];
-}) => Promise<{
+> = (
+  request: listRequestParameter<T, U>
+) => Promise<{
   items: T[U]["item"][] | entityEmpty<U>[];
   totalCount: number;
 }>;
@@ -16,7 +31,7 @@ type asyncReadListRequest<
 type asyncReadItemRequest<
   T extends entitiesContainerTemplate,
   U extends keyof T
-> = (request: { model: U; id: string }) => Promise<T[U]["item"]>;
+> = (request: itemRequestParameter<T, U>) => Promise<T[U]["item"]>;
 
 type props<T extends entitiesContainerTemplate> = {
   children: ApplicationElement;
@@ -34,37 +49,47 @@ type storeEntity<T extends entitiesContainerTemplate, U extends keyof T> = {
 };
 
 type storeList = {
-  [query: string]: {
-    ids: string[];
-    totalCount: number;
-  };
+  [query: string]:
+    | {
+        hasError: false;
+        ids: string[];
+        totalCount: number;
+      }
+    | {
+        hasError: true;
+        error: any;
+      };
 };
 
 type syncReadListRequest<
   T extends entitiesContainerTemplate,
   U extends keyof T
-> = (request: {
-  model: U;
-  parameter: T[U]["listParameter"];
-}) =>
+> = (
+  request: listRequestParameter<T, U>
+) =>
+  | {
+      hasError: true;
+      error: any;
+    }
   | {
       hasCache: true;
+      hasError: false;
       isLoading: boolean;
       items: entityEmpty<U>[];
       totalCount: number;
     }
   | {
       hasCache: false;
+      hasError: false;
       isLoading: boolean;
     };
 
 type syncReadItemRequest<
   T extends entitiesContainerTemplate,
   U extends keyof T
-> = (request: {
-  model: U;
-  id: string;
-}) =>
+> = (
+  request: itemRequestParameter<T, U>
+) =>
   | { hasCache: true; isLoading: boolean; item: storeEntity<T, U> }
   | { hasCache: false; isLoading: boolean };
 
@@ -79,12 +104,12 @@ export type repositoryState<T extends entitiesContainerTemplate> = {
   };
   getListCache: syncReadListRequest<T, keyof T>;
   getItemCache: syncReadItemRequest<T, keyof T>;
-  fetchList: asyncReadListRequest<T, keyof T>;
-  fetchItem: asyncReadItemRequest<T, keyof T>;
+  fetchList: (request: listRequestParameter<T, keyof T>) => void;
+  fetchItem: (request: itemRequestParameter<T, keyof T>) => void;
 };
 
-type insertItemsAction<T extends entitiesContainerTemplate> = {
-  type: "INSERT_ITEMS";
+type itemsInsertAction<T extends entitiesContainerTemplate> = {
+  type: "ITEMS_INSERT";
   payload: {
     [model in keyof T]?: {
       [id: string]: storeEntity<T, model>;
@@ -92,11 +117,11 @@ type insertItemsAction<T extends entitiesContainerTemplate> = {
   };
 };
 
-type insertListAction<
+type listInsertAction<
   T extends entitiesContainerTemplate,
   U extends keyof T
 > = {
-  type: "INSERT_LIST";
+  type: "LIST_INSERT";
   model: U;
   query: string;
   payload: {
@@ -105,9 +130,17 @@ type insertListAction<
   };
 };
 
+type listErrorAction<T extends entitiesContainerTemplate, U extends keyof T> = {
+  type: "LIST_ERROR";
+  model: U;
+  query: string;
+  payload: any;
+};
+
 export type repositoryActions<T extends entitiesContainerTemplate> =
-  | insertItemsAction<T>
-  | insertListAction<T, keyof T>;
+  | itemsInsertAction<T>
+  | listInsertAction<T, keyof T>
+  | listErrorAction<T, keyof T>;
 
 function getQueryAsString(parameter: Record<string, unknown>) {
   return JSON.stringify(parameter);
@@ -140,7 +173,15 @@ export default <T extends entitiesContainerTemplate>(
             queryString
           ];
 
+          if (result.hasError) {
+            return {
+              hasError: true,
+              error: result.error,
+            };
+          }
+
           return {
+            hasError: false,
             hasCache: true,
             isLoading,
             items: result.ids.map((id) => ({
@@ -151,6 +192,7 @@ export default <T extends entitiesContainerTemplate>(
           };
         }
         return {
+          hasError: false,
           hasCache: false,
           isLoading: isLoading,
         };
@@ -181,28 +223,46 @@ export default <T extends entitiesContainerTemplate>(
       };
 
       // Enforces to request new list
-      const fetchList: asyncReadListRequest<T, keyof T> = async (request) => {
+      async function fetchList<U extends keyof T>(
+        request: listRequestParameter<T, U>
+      ) {
         const queryString = getQueryAsString(request.parameter);
         loadingLists.push([request.model, queryString]);
-        const result = await Props.getState().requests.read.list(request);
 
+        let error;
+        let result;
+
+        try {
+          result = await Props.getState().requests.read.list(request);
+        } catch (catchedError) {
+          error = catchedError;
+        }
         loadingLists = loadingLists.filter(
           ([model, query]) =>
             (model === request.model && query === queryString) === false
         );
 
-        repository.dispatch({
-          type: "INSERT_LIST",
-          model: request.model,
-          query: queryString,
-          payload: result,
-        });
-
-        return result;
-      };
+        if (result) {
+          repository.dispatch({
+            type: "LIST_INSERT",
+            model: request.model,
+            query: queryString,
+            payload: result,
+          });
+        } else {
+          repository.dispatch({
+            type: "LIST_ERROR",
+            model: request.model,
+            query: queryString,
+            payload: error,
+          });
+        }
+      }
 
       // Enforces to request new item
-      const fetchItem: asyncReadItemRequest<T, keyof T> = async (request) => {
+      async function fetchItem<U extends keyof T>(
+        request: itemRequestParameter<T, U>
+      ) {
         loadingItems.push([request.model, request.id]);
 
         const result = await Props.getState().requests.read.item(request);
@@ -213,7 +273,7 @@ export default <T extends entitiesContainerTemplate>(
         );
 
         repository.dispatch({
-          type: "INSERT_ITEMS",
+          type: "ITEMS_INSERT",
           payload: {
             [request.model]: {
               [result.id]: {
@@ -222,10 +282,10 @@ export default <T extends entitiesContainerTemplate>(
               },
             },
           },
-        } as insertItemsAction<T>);
+        } as itemsInsertAction<T>);
 
         return result;
-      };
+      }
 
       const repository = store<repositoryState<T>, repositoryActions<T>>(
         {
@@ -237,7 +297,7 @@ export default <T extends entitiesContainerTemplate>(
           fetchItem,
         },
         (previouState, action) => {
-          if (action.type === "INSERT_LIST") {
+          if (action.type === "LIST_INSERT") {
             return {
               entities: previouState.entities,
               getListCache,
@@ -251,13 +311,34 @@ export default <T extends entitiesContainerTemplate>(
                   [action.query]: {
                     ids: action.payload.items.map((item) => item.id),
                     totalCount: action.payload.totalCount,
+                    hasError: false,
                   },
                 },
               },
             };
           }
 
-          if (action.type === "INSERT_ITEMS") {
+          if (action.type === "LIST_ERROR") {
+            return {
+              entities: previouState.entities,
+              getListCache,
+              getItemCache,
+              fetchList,
+              fetchItem,
+              lists: {
+                ...previouState.lists,
+                [action.model]: {
+                  ...previouState.lists[action.model],
+                  [action.query]: {
+                    hasError: true,
+                    error: action.payload,
+                  },
+                },
+              },
+            };
+          }
+
+          if (action.type === "ITEMS_INSERT") {
             const newEntities = { ...previouState.entities };
             Object.entries(action.payload).forEach(([model, items]) => {
               newEntities[model as keyof T] = {

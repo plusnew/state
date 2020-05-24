@@ -39,6 +39,10 @@ export default <T extends entitiesContainerTemplate>(
                       parameter: props.parameter,
                     });
 
+                    if (view.hasError) {
+                      throw view.error;
+                    }
+
                     return ((props.children as any)[0] as listRenderProps<T>)(
                       view
                     );
