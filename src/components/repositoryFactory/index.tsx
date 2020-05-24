@@ -347,63 +347,65 @@ export default <T extends entitiesContainerTemplate>(
           fetchItem,
         },
         (previouState, action) => {
-          if (action.type === "LIST_INSERT") {
-            return {
-              entities: previouState.entities,
-              getListCache,
-              getItemCache,
-              fetchList,
-              fetchItem,
-              lists: {
-                ...previouState.lists,
-                [action.model]: {
-                  ...previouState.lists[action.model],
-                  [action.query]: {
-                    ids: action.payload.items.map((item) => item.id),
-                    totalCount: action.payload.totalCount,
-                    hasError: false,
+          switch (action.type) {
+            case "LIST_INSERT": {
+              return {
+                entities: previouState.entities,
+                getListCache,
+                getItemCache,
+                fetchList,
+                fetchItem,
+                lists: {
+                  ...previouState.lists,
+                  [action.model]: {
+                    ...previouState.lists[action.model],
+                    [action.query]: {
+                      ids: action.payload.items.map((item) => item.id),
+                      totalCount: action.payload.totalCount,
+                      hasError: false,
+                    },
                   },
                 },
-              },
-            };
-          }
-
-          if (action.type === "LIST_ERROR") {
-            return {
-              entities: previouState.entities,
-              getListCache,
-              getItemCache,
-              fetchList,
-              fetchItem,
-              lists: {
-                ...previouState.lists,
-                [action.model]: {
-                  ...previouState.lists[action.model],
-                  [action.query]: {
-                    hasError: true,
-                    error: action.payload,
-                  },
-                },
-              },
-            };
-          }
-
-          if (action.type === "ITEMS_INSERT") {
-            const newEntities = { ...previouState.entities };
-            Object.entries(action.payload).forEach(([model, items]) => {
-              newEntities[model as keyof T] = {
-                ...previouState.entities[model],
-                ...items,
               };
-            });
-            return {
-              lists: previouState.lists,
-              getListCache,
-              getItemCache,
-              fetchList,
-              fetchItem,
-              entities: newEntities,
-            };
+            }
+
+            case "LIST_ERROR": {
+              return {
+                entities: previouState.entities,
+                getListCache,
+                getItemCache,
+                fetchList,
+                fetchItem,
+                lists: {
+                  ...previouState.lists,
+                  [action.model]: {
+                    ...previouState.lists[action.model],
+                    [action.query]: {
+                      hasError: true,
+                      error: action.payload,
+                    },
+                  },
+                },
+              };
+            }
+
+            case "ITEMS_INSERT": {
+              const newEntities = { ...previouState.entities };
+              Object.entries(action.payload).forEach(([model, items]) => {
+                newEntities[model as keyof T] = {
+                  ...previouState.entities[model],
+                  ...items,
+                };
+              });
+              return {
+                lists: previouState.lists,
+                getListCache,
+                getItemCache,
+                fetchList,
+                fetchItem,
+                entities: newEntities,
+              };
+            }
           }
 
           /* istanbul ignore next */
