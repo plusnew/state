@@ -176,4 +176,86 @@ describe("test statefactory", () => {
 
     expect(wrapper.contains(<span>nope</span>)).toBe(true);
   });
+
+  it("item fails", async () => {
+    const { Repository, Branch, List, Item } = stateFactory<{
+      blogPost: {
+        listParameter: {
+          sort: "asc" | "desc";
+        };
+        item: blogPostType;
+      };
+    }>();
+
+    const list = promiseHandler(
+      (req: {
+        model: "blogPost";
+        parameter: {
+          sort: "asc" | "desc";
+        };
+      }) => ({
+        items: [
+          {
+            id: "1",
+            model: req.model,
+          },
+          {
+            id: "2",
+            model: req.model,
+          },
+        ],
+        totalCount: 5,
+      })
+    );
+
+    const wrapper = mount(
+      <Repository
+        requests={{
+          read: {
+            list: list.fn,
+            item: (req: { model: "blogPost"; id: string }) =>
+              Promise.reject(`nope-${req.id}`),
+          },
+        }}
+      >
+        <Branch>
+          <Try catch={(error) => <span>{error}</span>}>
+            {() => (
+              <List model="blogPost" parameter={{ sort: "asc" }}>
+                {(listState) => (
+                  <>
+                    {listState.isLoading && <div>list-loading</div>}
+                    {listState.items.map((item) => (
+                      <Try catch={(error) => <span>{error}</span>}>
+                        {() => (
+                          <Item model="blogPost" id={item.id}>
+                            {(view) =>
+                              view.isLoading ? (
+                                <span>item-loading</span>
+                              ) : (
+                                <span>{view.item.attributes.name}</span>
+                              )
+                            }
+                          </Item>
+                        )}
+                      </Try>
+                    ))}
+                  </>
+                )}
+              </List>
+            )}
+          </Try>
+        </Branch>
+      </Repository>
+    );
+
+    expect(wrapper.contains(<div>list-loading</div>)).toBe(true);
+
+    await list.resolve();
+
+    expect(wrapper.contains(<div>list-loading</div>)).toBe(false);
+
+    expect(wrapper.contains(<span>nope-1</span>)).toBe(true);
+    expect(wrapper.contains(<span>nope-2</span>)).toBe(true);
+  });
 });

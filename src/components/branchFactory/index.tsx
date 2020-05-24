@@ -45,8 +45,9 @@ type syncReadItemRequest<
   model: U;
   id: string;
 }) =>
-  | { isLoading: false; item: T[U]["item"] }
-  | { isLoading: true; item: T[U]["item"] | null };
+  | { hasError: true; error: any }
+  | { hasError: false; isLoading: false; item: T[U]["item"] }
+  | { hasError: false; isLoading: true; item: T[U]["item"] | null };
 
 export type branchState<T extends entitiesContainerTemplate> = {
   changeLog: changedAttributes<T, keyof T>[];
@@ -110,10 +111,14 @@ export default <T extends entitiesContainerTemplate>(
         const repositoryState = repository.getState();
         const result = repositoryState.getItemCache(request);
 
+        if (result.hasError) {
+          return result;
+        }
         if (result.hasCache) {
           return {
+            hasError: false,
             isLoading: result.isLoading,
-            item: result.item.payload,
+            item: result.item,
           };
         }
 
@@ -122,6 +127,7 @@ export default <T extends entitiesContainerTemplate>(
         }
 
         return {
+          hasError: false,
           isLoading: true,
           item: null,
         };

@@ -18,15 +18,15 @@ type itemRequestParameter<
   id: string;
 };
 
+type listResponse<T extends entitiesContainerTemplate, U extends keyof T> = {
+  items: T[U]["item"][] | entityEmpty<U>[];
+  totalCount: number;
+};
+
 type asyncReadListRequest<
   T extends entitiesContainerTemplate,
   U extends keyof T
-> = (
-  request: listRequestParameter<T, U>
-) => Promise<{
-  items: T[U]["item"][] | entityEmpty<U>[];
-  totalCount: number;
-}>;
+> = (request: listRequestParameter<T, U>) => Promise<listResponse<T, U>>;
 
 type asyncReadItemRequest<
   T extends entitiesContainerTemplate,
@@ -43,10 +43,16 @@ type props<T extends entitiesContainerTemplate> = {
   };
 };
 
-type storeEntity<T extends entitiesContainerTemplate, U extends keyof T> = {
-  isDeleted: false;
-  payload: T[U]["item"];
-};
+type storeEntity<T extends entitiesContainerTemplate, U extends keyof T> =
+  | {
+      hasError: false;
+      isDeleted: false;
+      payload: T[U]["item"];
+    }
+  | {
+      hasError: true;
+      error: any;
+    };
 
 type storeList = {
   [query: string]:
@@ -90,8 +96,17 @@ type syncReadItemRequest<
 > = (
   request: itemRequestParameter<T, U>
 ) =>
-  | { hasCache: true; isLoading: boolean; item: storeEntity<T, U> }
-  | { hasCache: false; isLoading: boolean };
+  | {
+      hasError: true;
+      error: any;
+    }
+  | {
+      hasError: false;
+      hasCache: true;
+      isLoading: boolean;
+      item: T[U]["item"];
+    }
+  | { hasError: false; hasCache: false; isLoading: boolean };
 
 export type repositoryState<T extends entitiesContainerTemplate> = {
   entities: {
@@ -197,6 +212,7 @@ export default <T extends entitiesContainerTemplate>(
           isLoading: isLoading,
         };
       };
+
       // Returns item in case cache is present
       const getItemCache: syncReadItemRequest<T, keyof T> = (request) => {
         const isLoading =
@@ -210,13 +226,26 @@ export default <T extends entitiesContainerTemplate>(
           repositoryState.entities[request.model] !== undefined &&
           request.id in repositoryState.entities[request.model]
         ) {
+          const result: storeEntity<T, keyof T> = (repositoryState.entities[
+            request.model
+          ] as any)[request.id];
+
+          if (result.hasError) {
+            return {
+              hasError: true,
+              error: result.error,
+            };
+          }
+
           return {
+            hasError: false,
             hasCache: true,
             isLoading,
-            item: (repositoryState.entities[request.model] as any)[request.id],
+            item: result.payload,
           };
         }
         return {
+          hasError: false,
           hasCache: false,
           isLoading: isLoading,
         };
@@ -230,7 +259,7 @@ export default <T extends entitiesContainerTemplate>(
         loadingLists.push([request.model, queryString]);
 
         let error;
-        let result;
+        let result: listResponse<T, keyof T> | null = null;
 
         try {
           result = await Props.getState().requests.read.list(request);
@@ -265,24 +294,45 @@ export default <T extends entitiesContainerTemplate>(
       ) {
         loadingItems.push([request.model, request.id]);
 
-        const result = await Props.getState().requests.read.item(request);
+        let error;
+        let result: T[U]["item"] | null = null;
+        try {
+          result = await Props.getState().requests.read.item(request);
+        } catch (catchedError) {
+          error = catchedError;
+        }
 
         loadingItems = loadingItems.filter(
           ([model, id]) =>
             (model === request.model && id === request.id) === false
         );
 
-        repository.dispatch({
-          type: "ITEMS_INSERT",
-          payload: {
-            [request.model]: {
-              [result.id]: {
-                isDeleted: false,
-                payload: result,
+        if (result) {
+          repository.dispatch({
+            type: "ITEMS_INSERT",
+            payload: {
+              [request.model]: {
+                [request.id]: {
+                  isDeleted: false,
+                  payload: result,
+                  hasError: false,
+                },
               },
             },
-          },
-        } as itemsInsertAction<T>);
+          } as itemsInsertAction<T>);
+        } else {
+          repository.dispatch({
+            type: "ITEMS_INSERT",
+            payload: {
+              [request.model]: {
+                [request.id]: {
+                  hasError: true,
+                  error: error,
+                },
+              },
+            },
+          } as itemsInsertAction<T>);
+        }
 
         return result;
       }
