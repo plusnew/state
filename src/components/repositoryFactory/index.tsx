@@ -1,23 +1,92 @@
 import plusnew, { Component, store } from "@plusnew/core";
-import type { entitiesContainerTemplate } from "../../types";
+import type { entitiesContainerTemplate, entityEmpty } from "../../types";
 import type { Context, ApplicationElement, Props } from "@plusnew/core";
-type props<> = {
+
+type asyncReadListRequest<
+  T extends entitiesContainerTemplate,
+  U extends keyof T
+> = (request: {
+  model: U;
+  parameter: T[U]["listParameter"];
+}) => Promise<{
+  items: T[U]["item"][] | entityEmpty<U>[];
+  totalCount: number;
+}>;
+
+type asyncReadItemRequest<
+  T extends entitiesContainerTemplate,
+  U extends keyof T
+> = (request: { type: U; id: string }) => Promise<T[U]["item"]>;
+
+type props<T extends entitiesContainerTemplate> = {
   children: ApplicationElement;
+  requests: {
+    read: {
+      list: asyncReadListRequest<T, keyof T>;
+      item: asyncReadItemRequest<T, keyof T>;
+    };
+  };
 };
 
 type entity<T extends entitiesContainerTemplate, U extends keyof T> = {
   isDeleted: false;
-  payload: T[U];
+  payload: T[U]["item"];
 };
+
+type syncReadListRequest<
+  T extends entitiesContainerTemplate,
+  U extends keyof T
+> = (request: {
+  model: U;
+  parameter: T[U]["listParameter"];
+}) =>
+  | {
+      hasCache: true;
+      isLoading: boolean;
+      items: T[U]["item"][] | entityEmpty<U>[];
+      totalCount: number;
+    }
+  | {
+      hasCache: false;
+      isLoading: boolean;
+    };
+
+type syncReadItemRequest<
+  T extends entitiesContainerTemplate,
+  U extends keyof T
+> = (request: {
+  model: U;
+  id: string;
+}) =>
+  | { hasCache: true; isLoading: boolean; item: T[U]["item"] }
+  | { hasCache: false; isLoading: boolean };
 
 export type repositoryState<T extends entitiesContainerTemplate> = {
   entities: Partial<
     {
-      [type in keyof T]: {
-        [id: string]: entity<T, type>;
+      [model in keyof T]: {
+        [id: string]: entity<T, model>;
       };
     }
   >;
+  lists: Partial<
+    {
+      [model in keyof T]: {
+        [parameter: string]:
+          | {
+              ids: string[];
+              totalCount: number;
+            }
+          | {
+              error: any;
+            };
+      };
+    }
+  >;
+  getListCache: syncReadListRequest<T, keyof T>;
+  getItemCache: syncReadItemRequest<T, keyof T>;
+  fetchList: () => null;
+  fetchItem: () => null;
 };
 
 type insertAction<T extends entitiesContainerTemplate> = {
@@ -32,13 +101,46 @@ export type repositoryActions<
 export default <T extends entitiesContainerTemplate>(
   context: Context<repositoryState<T>, repositoryActions<T>>
 ) =>
-  class Repository extends Component<props> {
+  class Repository extends Component<props<T>> {
     static displayName = __dirname;
-    render(Props: Props<props>) {
+    render(Props: Props<props<T>>) {
+      // Returns ids, in case cache is present
+      const getListCache: syncReadListRequest<T, keyof T> = () => {
+        return {
+          hasCache: false,
+          isLoading: false,
+        };
+      };
+      // Returns item in case cache is present
+      const getItemCache: syncReadItemRequest<T, keyof T> = () => {
+        return {
+          hasCache: false,
+          isLoading: false,
+        };
+      };
+
+      // Enforces to request new list
+      const fetchList = () => {
+        return null;
+      };
+
+      // Enforces to request new item
+      const fetchItem = () => {
+        return null;
+      };
+
       const repository = store<repositoryState<T>, repositoryActions<T>>(
-        { entities: {} },
+        {
+          entities: {},
+          lists: {},
+          getListCache,
+          getItemCache,
+          fetchList,
+          fetchItem,
+        },
         (previouState) => previouState
       );
+
       return (
         <repository.Observer>
           {(repositoryState) => (

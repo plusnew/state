@@ -1,17 +1,18 @@
-export type entityTemplate<entityNames> = {
+export type entityEmpty<entityName> = {
+  id: string;
+  model: entityName;
+};
+
+export type entityTemplate<entityName> = {
   listParameter: any;
   item: {
     id: string;
-    attributes: {};
+    model: entityName;
+    attributes: Record<string, unknown>;
     relationships: {
-      [key: string]: entityEmpty<entityNames> | entityEmpty<entityNames>[];
+      [key: string]: entityEmpty<entityName> | entityEmpty<entityName>[];
     };
   };
-};
-
-export type entityEmpty<entityNames> = {
-  id: string;
-  type: entityNames;
 };
 
 export type entitiesContainerTemplate = {

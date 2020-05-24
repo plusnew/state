@@ -14,17 +14,34 @@ type itemRenderProps<T extends entitiesContainerTemplate, U extends keyof T> = (
 ) => ApplicationElement;
 
 type props<T extends entitiesContainerTemplate, U extends keyof T> = {
-  type: U;
+  model: U;
   id: string;
   children: itemRenderProps<T, U>;
 };
 
 export default <T extends entitiesContainerTemplate>(
-  _branchContext: Context<branchState<T>, branchActions<T>>
+  branchContext: Context<branchState<T>, branchActions<T>>
 ) =>
   class Item<U extends keyof T> extends Component<props<T, U>> {
     static displayName = __dirname;
     render(Props: Props<props<T, U>>) {
-      return <Props>{(_props) => null}</Props>;
+      return (
+        <branchContext.Consumer>
+          {(branchState) => (
+            <Props>
+              {(props) => {
+                const view = branchState.getItem({
+                  model: props.model,
+                  id: props.id,
+                });
+
+                return ((props.children as any)[0] as itemRenderProps<T, U>)(
+                  view
+                );
+              }}
+            </Props>
+          )}
+        </branchContext.Consumer>
+      );
     }
   };

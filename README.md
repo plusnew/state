@@ -9,13 +9,14 @@ const { Repository, Branch, Item, List } = factory<{
     listParameter: { sort: "asc", "desc"},
     item: {
       id: string,
+      model: "blogPost",
       attributes: {
         title: string
       },
       relationships: {
         author: {
           id: string,
-          type: 'user',
+          model: 'user',
         }
       }
     }
@@ -24,6 +25,7 @@ const { Repository, Branch, Item, List } = factory<{
     listParameter: {},
     item: {
       id: string,
+      model: "user",
       attributes: {
         name: string
       },
@@ -37,30 +39,22 @@ export default component(
   () =>
     <Repository
       requests={{
-        blogPost: {
-          read: {
-            list: ...
-            item: ...
-          }
-        },
-        blogPost: {
-          read: {
-            list: ...
-            item: ...
-          }
+        read: {
+          list: (req) => fetch(`/api/${req.model}`).then((res) => res.json()),
+          item: (req) => fetch(`/api/${req.model}/${req.id}`).then((res) => res.json())
         }
       }}
     >
       <Branch>
-        <List type="blogPost" parameter={{ sort: 'ascending' }}>{({isLoading, items: blogPosts}) =>
+        <List model="blogPost" parameter={{ sort: 'ascending' }}>{({isLoading, items: blogPosts}) =>
           {blogPosts.map(blogPost =>
-            <Item type="blogPost" id={blogPost.id}>{(blogPostItemView) =>
+            <Item model="blogPost" id={blogPost.id}>{(blogPostItemView) =>
               {blogPostItemView.isLoading
                 ? 'loading'
                 :
                   <>
                     {blogPostItemView.item.attributes.title}
-                    <Item type="user" id={blogPostItemView.item.relationships.author.id}>{({isLoading, item: author, changeAttributes}) =>
+                    <Item model="user" id={blogPostItemView.item.relationships.author.id}>{({isLoading, item: author, changeAttributes}) =>
                       <input
                         value={author?.attributes.name}
                         onchange={(evt) => changeAttributes({'name': evt.currentTarget.value})}
