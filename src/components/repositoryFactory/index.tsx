@@ -140,7 +140,7 @@ type listInsertAction<
   model: U;
   query: string;
   payload: {
-    items: (T[U]["item"] | entityEmpty<U>)[];
+    items: T[U]["item"][] | entityEmpty<U>[];
     totalCount: number;
   };
 };
@@ -349,8 +349,31 @@ export default <T extends entitiesContainerTemplate>(
         (previouState, action) => {
           switch (action.type) {
             case "LIST_INSERT": {
+              const newEntities =
+                action.payload.items.length > 0 &&
+                "attributes" in action.payload.items[0]
+                  ? {
+                      ...previouState.entities,
+                      [action.model]: {
+                        ...previouState.entities[action.model],
+                        ...Object.fromEntries(
+                          (action.payload.items as T[keyof T]["item"][]).map(
+                            (item) => [
+                              item.id,
+                              {
+                                hasError: false,
+                                isDeleted: false,
+                                payload: item,
+                              },
+                            ]
+                          )
+                        ),
+                      },
+                    }
+                  : previouState.entities;
+
               return {
-                entities: previouState.entities,
+                entities: newEntities,
                 getListCache,
                 getItemCache,
                 fetchList,
@@ -360,7 +383,9 @@ export default <T extends entitiesContainerTemplate>(
                   [action.model]: {
                     ...previouState.lists[action.model],
                     [action.query]: {
-                      ids: action.payload.items.map((item) => item.id),
+                      ids: (action.payload.items as entityEmpty<keyof T>[]).map(
+                        (item) => item.id
+                      ),
                       totalCount: action.payload.totalCount,
                       hasError: false,
                     },

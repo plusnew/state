@@ -11,7 +11,7 @@ type blogPostType = {
   attributes: {
     name: string;
   };
-  relationships: any;
+  relationships: {};
 };
 
 function promiseHandler<T, U>(cb: (data: T) => U) {
@@ -257,5 +257,97 @@ describe("test statefactory", () => {
 
     expect(wrapper.contains(<span>nope-1</span>)).toBe(true);
     expect(wrapper.contains(<span>nope-2</span>)).toBe(true);
+  });
+
+  it("list request with loaded entities", async () => {
+    const { Repository, Branch, Item, List } = stateFactory<{
+      blogPost: {
+        listParameter: {
+          sort: "asc" | "desc";
+        };
+        item: blogPostType;
+      };
+    }>();
+
+    const list = promiseHandler(
+      (req: {
+        model: "blogPost";
+        parameter: {
+          sort: "asc" | "desc";
+        };
+      }) => ({
+        items: [
+          {
+            id: "1",
+            model: req.model,
+            attributes: {
+              name: "bar-1",
+            },
+            relationships: {},
+          },
+          {
+            id: "2",
+            model: req.model,
+            attributes: {
+              name: "bar-2",
+            },
+            relationships: {},
+          },
+        ],
+        totalCount: 5,
+      })
+    );
+
+    const item = promiseHandler((req: { model: "blogPost"; id: string }) => ({
+      id: req.id,
+      model: req.model,
+      attributes: {
+        name: `foo-${req.id}`,
+      },
+      relationships: {},
+    }));
+
+    const wrapper = mount(
+      <Repository
+        requests={{
+          read: {
+            list: list.fn,
+            item: item.fn,
+          },
+        }}
+      >
+        <Branch>
+          <List model="blogPost" parameter={{ sort: "asc" }}>
+            {(listState) => (
+              <>
+                {listState.isLoading && <div>list-loading</div>}
+                {listState.items.map((item) => (
+                  <Item model="blogPost" id={item.id}>
+                    {(view) =>
+                      view.isLoading ? (
+                        <span>item-loading</span>
+                      ) : (
+                        <span>{view.item.attributes.name}</span>
+                      )
+                    }
+                  </Item>
+                ))}
+              </>
+            )}
+          </List>
+        </Branch>
+      </Repository>
+    );
+
+    expect(wrapper.contains(<div>list-loading</div>)).toBe(true);
+    expect(wrapper.contains(<span>item-loading</span>)).toBe(false);
+
+    await list.resolve();
+
+    expect(wrapper.contains(<div>list-loading</div>)).toBe(false);
+    expect(wrapper.contains(<span>item-loading</span>)).toBe(false);
+    expect(wrapper.contains(<span>bar-1</span>)).toBe(true);
+    expect(wrapper.contains(<span>bar-2</span>)).toBe(true);
+    expect(item.fn).not.toHaveBeenCalled();
   });
 });
