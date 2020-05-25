@@ -39,14 +39,18 @@ export default component(
   () =>
     <Repository
       requests={{
-        read: {
-          list: (req) => fetch(`/api/${req.model}`).then((res) => res.json()),
-          item: (req) => fetch(`/api/${req.model}/${req.id}`).then((res) => res.json())
-        }
+        blogPost: {
+          readList: ({ sort }) => fetch(`/api/blogPost?sort=${sort}`).then((res) => res.json()),
+          readItem: (id) => fetch(`/api/blogPost/${id}`).then((res) => res.json())
+        },
+        user: {
+          readList: () => fetch(`/api/user`).then((res) => res.json()),
+          readItem: (id) => fetch(`/api/user/${id}`).then((res) => res.json())
+        },
       }}
     >
       <Branch>
-        <List model="blogPost" parameter={{ sort: 'ascending' }}>{({isLoading, items: blogPosts}) =>
+        <List model="blogPost" parameter={{ sort: 'asc' }}>{({isLoading, items: blogPosts}) =>
           {blogPosts.map(blogPost =>
             <Item model="blogPost" id={blogPost.id}>{(blogPostItemView) =>
               {blogPostItemView.isLoading

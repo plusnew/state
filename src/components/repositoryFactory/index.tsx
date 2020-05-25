@@ -26,19 +26,19 @@ type listResponse<T extends entitiesContainerTemplate, U extends keyof T> = {
 type asyncReadListRequest<
   T extends entitiesContainerTemplate,
   U extends keyof T
-> = (request: listRequestParameter<T, U>) => Promise<listResponse<T, U>>;
+> = (parameter: T[U]["listParameter"]) => Promise<listResponse<T, U>>;
 
 type asyncReadItemRequest<
   T extends entitiesContainerTemplate,
   U extends keyof T
-> = (request: itemRequestParameter<T, U>) => Promise<T[U]["item"]>;
+> = (id: string) => Promise<T[U]["item"]>;
 
 type props<T extends entitiesContainerTemplate> = {
   children: ApplicationElement;
   requests: {
-    read: {
-      list: asyncReadListRequest<T, keyof T>;
-      item: asyncReadItemRequest<T, keyof T>;
+    [K in keyof T]: {
+      readList: asyncReadListRequest<T, K>;
+      readItem: asyncReadItemRequest<T, K>;
     };
   };
 };
@@ -262,7 +262,9 @@ export default <T extends entitiesContainerTemplate>(
         let result: listResponse<T, keyof T> | null = null;
 
         try {
-          result = await Props.getState().requests.read.list(request);
+          result = await Props.getState().requests[request.model].readList(
+            request.parameter
+          );
         } catch (catchedError) {
           error = catchedError;
         }
@@ -297,7 +299,9 @@ export default <T extends entitiesContainerTemplate>(
         let error;
         let result: T[U]["item"] | null = null;
         try {
-          result = await Props.getState().requests.read.item(request);
+          result = await Props.getState().requests[request.model].readItem(
+            request.id
+          );
         } catch (catchedError) {
           error = catchedError;
         }

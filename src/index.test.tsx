@@ -53,32 +53,25 @@ describe("test statefactory", () => {
       };
     }>();
 
-    const list = promiseHandler(
-      (req: {
-        model: "blogPost";
-        parameter: {
-          sort: "asc" | "desc";
-        };
-      }) => ({
-        items: [
-          {
-            id: "1",
-            model: req.model,
-          },
-          {
-            id: "2",
-            model: req.model,
-          },
-        ],
-        totalCount: 5,
-      })
-    );
+    const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
+      items: [
+        {
+          id: "1",
+          model: "blogPost" as const,
+        },
+        {
+          id: "2",
+          model: "blogPost" as const,
+        },
+      ],
+      totalCount: 5,
+    }));
 
-    const item = promiseHandler((req: { model: "blogPost"; id: string }) => ({
-      id: req.id,
-      model: req.model,
+    const item = promiseHandler((id: string) => ({
+      id: id,
+      model: "blogPost" as const,
       attributes: {
-        name: `foo-${req.id}`,
+        name: `foo-${id}`,
       },
       relationships: {},
     }));
@@ -86,9 +79,9 @@ describe("test statefactory", () => {
     const wrapper = mount(
       <Repository
         requests={{
-          read: {
-            list: list.fn,
-            item: item.fn,
+          blogPost: {
+            readList: list.fn,
+            readItem: item.fn,
           },
         }}
       >
@@ -144,14 +137,14 @@ describe("test statefactory", () => {
     const wrapper = mount(
       <Repository
         requests={{
-          read: {
-            list: () => Promise.reject("nope"),
-            item: (req: { model: "blogPost"; id: string }) =>
+          blogPost: {
+            readList: () => Promise.reject("nope"),
+            readItem: (id: string) =>
               Promise.resolve({
-                id: req.id,
-                model: req.model,
+                id: id,
+                model: "blogPost" as const,
                 attributes: {
-                  name: `foo-${req.id}`,
+                  name: `foo-${id}`,
                 },
                 relationships: {},
               }),
@@ -187,34 +180,26 @@ describe("test statefactory", () => {
       };
     }>();
 
-    const list = promiseHandler(
-      (req: {
-        model: "blogPost";
-        parameter: {
-          sort: "asc" | "desc";
-        };
-      }) => ({
-        items: [
-          {
-            id: "1",
-            model: req.model,
-          },
-          {
-            id: "2",
-            model: req.model,
-          },
-        ],
-        totalCount: 5,
-      })
-    );
+    const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
+      items: [
+        {
+          id: "1",
+          model: "blogPost" as const,
+        },
+        {
+          id: "2",
+          model: "blogPost" as const,
+        },
+      ],
+      totalCount: 5,
+    }));
 
     const wrapper = mount(
       <Repository
         requests={{
-          read: {
-            list: list.fn,
-            item: (req: { model: "blogPost"; id: string }) =>
-              Promise.reject(`nope-${req.id}`),
+          blogPost: {
+            readList: list.fn,
+            readItem: (id: string) => Promise.reject(`nope-${id}`),
           },
         }}
       >
@@ -269,40 +254,33 @@ describe("test statefactory", () => {
       };
     }>();
 
-    const list = promiseHandler(
-      (req: {
-        model: "blogPost";
-        parameter: {
-          sort: "asc" | "desc";
-        };
-      }) => ({
-        items: [
-          {
-            id: "1",
-            model: req.model,
-            attributes: {
-              name: "bar-1",
-            },
-            relationships: {},
+    const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
+      items: [
+        {
+          id: "1",
+          model: "blogPost" as const,
+          attributes: {
+            name: "bar-1",
           },
-          {
-            id: "2",
-            model: req.model,
-            attributes: {
-              name: "bar-2",
-            },
-            relationships: {},
+          relationships: {},
+        },
+        {
+          id: "2",
+          model: "blogPost" as const,
+          attributes: {
+            name: "bar-2",
           },
-        ],
-        totalCount: 5,
-      })
-    );
+          relationships: {},
+        },
+      ],
+      totalCount: 5,
+    }));
 
-    const item = promiseHandler((req: { model: "blogPost"; id: string }) => ({
-      id: req.id,
-      model: req.model,
+    const item = promiseHandler((id: string) => ({
+      id: id,
+      model: "blogPost" as const,
       attributes: {
-        name: `foo-${req.id}`,
+        name: `foo-${id}`,
       },
       relationships: {},
     }));
@@ -310,9 +288,9 @@ describe("test statefactory", () => {
     const wrapper = mount(
       <Repository
         requests={{
-          read: {
-            list: list.fn,
-            item: item.fn,
+          blogPost: {
+            readList: list.fn,
+            readItem: item.fn,
           },
         }}
       >
