@@ -14,12 +14,12 @@
 	],
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/plusnew-state/plusnew.git"
+		"url": "git+https://github.com/plusnew/state.git"
 	},
 	"author": "Carlo Jeske",
 	"license": "MIT",
 	"bugs": {
-		"url": "https://github.com/plusnew-state/plusnew/issues"
+		"url": "https://github.com/plusnew/state/issues"
 	},
 	"dependencies": {},
 	"devDependencies": {
