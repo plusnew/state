@@ -8,16 +8,19 @@ import type { entitiesContainerTemplate, entityEmpty } from "../../types";
 import type { branchState, branchActions } from "../branchFactory";
 import type { repositoryState, repositoryActions } from "../repositoryFactory";
 
-type listRenderProps<T extends entitiesContainerTemplate> = (value: {
+type listRenderProps<
+  T extends entitiesContainerTemplate,
+  U extends keyof T
+> = (value: {
   isLoading: boolean;
-  items: entityEmpty<keyof T>[];
+  items: entityEmpty<U>[];
   totalCount: number;
 }) => ApplicationElement;
 
 type props<T extends entitiesContainerTemplate, U extends keyof T> = {
   model: U;
   parameter: T[U]["listParameter"];
-  children: listRenderProps<T>;
+  children: listRenderProps<T, U>;
 };
 
 export default <T extends entitiesContainerTemplate>(
