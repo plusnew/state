@@ -14,10 +14,20 @@ type changedAttributes<
   T extends entitiesContainerTemplate,
   U extends keyof T
 > = {
-  changeType: "ATTRIBUTES_CHANGE";
-  entityType: U;
+  type: "ATTRIBUTES_CHANGE";
+  model: U;
   id: string;
   payload: Partial<T[U]["item"]["attributes"]>;
+};
+
+type changedRelationships<
+  T extends entitiesContainerTemplate,
+  U extends keyof T
+> = {
+  type: "RELATIONSHIPS_CHANGE";
+  model: U;
+  id: string;
+  payload: Partial<T[U]["item"]["relationships"]>;
 };
 
 type syncReadListRequest<
@@ -49,16 +59,21 @@ type syncReadItemRequest<
   | { hasError: false; isLoading: false; item: T[U]["item"] }
   | { hasError: false; isLoading: true; item: T[U]["item"] | null };
 
+type changeLog<T extends entitiesContainerTemplate, U extends keyof T> =
+  | changedAttributes<T, U>
+  | changedRelationships<T, U>;
+
 export type branchState<T extends entitiesContainerTemplate> = {
-  changeLog: changedAttributes<T, keyof T>[];
+  changeLog: changeLog<T, keyof T>[];
   currentChangePosition: number | null;
   getList: syncReadListRequest<T, keyof T>;
   getItem: syncReadItemRequest<T, keyof T>;
 };
 
-export type branchActions<
-  T extends entitiesContainerTemplate
-> = changedAttributes<T, keyof T>;
+export type branchActions<T extends entitiesContainerTemplate> = changeLog<
+  T,
+  keyof T
+>;
 
 type props<> = {
   children: ApplicationElement;
@@ -115,10 +130,50 @@ export default <T extends entitiesContainerTemplate>(
           return result;
         }
         if (result.hasCache) {
+          let attributeChanges = {};
+          let relationshipChanges = {};
+
+          const changeLog = branchStore.getState().changeLog;
+          for (let i = 0; i < changeLog.length; i++) {
+            const change = changeLog[i];
+            if (
+              change.model === result.item.model &&
+              change.id === result.item.id
+            ) {
+              switch (change.type) {
+                case "ATTRIBUTES_CHANGE": {
+                  attributeChanges = {
+                    ...attributeChanges,
+                    ...change.payload,
+                  };
+                  break;
+                }
+                case "RELATIONSHIPS_CHANGE": {
+                  relationshipChanges = {
+                    ...relationshipChanges,
+                    ...change.payload,
+                  };
+                  break;
+                }
+              }
+            }
+          }
+
           return {
             hasError: false,
             isLoading: result.isLoading,
-            item: result.item,
+            item: {
+              model: result.item.model,
+              id: result.item.id,
+              attributes: {
+                ...result.item.attributes,
+                ...attributeChanges,
+              },
+              relationships: {
+                ...result.item.relationships,
+                ...relationshipChanges,
+              },
+            },
           };
         }
 
@@ -140,7 +195,21 @@ export default <T extends entitiesContainerTemplate>(
           getList,
           getItem,
         },
-        (previousState) => previousState
+        (previousState, action) => {
+          switch (action.type) {
+            case "ATTRIBUTES_CHANGE":
+            case "RELATIONSHIPS_CHANGE":
+              return {
+                changeLog: [...previousState.changeLog, action],
+                currentChangePosition: previousState.currentChangePosition,
+                getList,
+                getItem,
+              };
+          }
+
+          /* istanbul ignore next */
+          throw new Error("No such action");
+        }
       );
 
       return (

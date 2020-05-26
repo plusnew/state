@@ -2,6 +2,7 @@ import plusnew, { Try } from "@plusnew/core";
 import enzymeAdapterPlusnew, { mount } from "@plusnew/enzyme-adapter";
 import { configure } from "enzyme";
 import stateFactory from "./index";
+import { promiseHandler, tick } from "testHelper";
 
 configure({ adapter: new enzymeAdapterPlusnew() });
 
@@ -13,34 +14,6 @@ type blogPostType = {
   };
   relationships: {};
 };
-
-function promiseHandler<T, U>(cb: (data: T) => U) {
-  const cbs: any = [];
-  const datas: U[] = [];
-  const promises: Promise<U>[] = [];
-  return {
-    fn: jest.fn((data: T) => {
-      datas.push(cb(data));
-      promises.push(
-        new Promise<U>((resolve) => cbs.push(resolve))
-      );
-      return promises[promises.length - 1];
-    }),
-    resolve: () =>
-      Promise.all(
-        promises.map((promise, index) => {
-          cbs[index](datas[index]);
-          return promise;
-        })
-      ),
-  };
-}
-
-async function tick(count: number) {
-  for (let i = 0; i < count; i += 1) {
-    await new Promise((resolve) => resolve());
-  }
-}
 
 describe("test statefactory", () => {
   it("basic", async () => {
