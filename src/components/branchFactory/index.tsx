@@ -16,7 +16,7 @@ type changedAttributes<
 > = {
   type: "ATTRIBUTES_CHANGE";
   model: U;
-  id: string;
+  id: T[U]["item"]["id"];
   payload: Partial<T[U]["item"]["attributes"]>;
 };
 
@@ -26,7 +26,7 @@ type changedRelationships<
 > = {
   type: "RELATIONSHIPS_CHANGE";
   model: U;
-  id: string;
+  id: T[U]["item"]["id"];
   payload: Partial<T[U]["item"]["relationships"]>;
 };
 
@@ -53,7 +53,7 @@ type syncReadItemRequest<
   U extends keyof T
 > = (request: {
   model: U;
-  id: string;
+  id: T[U]["item"]["id"];
 }) =>
   | { hasError: true; error: any }
   | { hasError: false; isLoading: false; item: T[U]["item"] }

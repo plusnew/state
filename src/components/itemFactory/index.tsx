@@ -25,7 +25,7 @@ type itemRenderProps<T extends entitiesContainerTemplate, U extends keyof T> = (
 
 type props<T extends entitiesContainerTemplate, U extends keyof T> = {
   model: U;
-  id: string;
+  id: T[U]["item"]["id"];
   children: itemRenderProps<T, U>;
 };
 

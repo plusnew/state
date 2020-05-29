@@ -136,7 +136,6 @@ describe("test item", () => {
 
     await item.resolve();
 
-    expect(wrapper.contains(<div>list-loading</div>)).toBe(false);
     expect(wrapper.contains(<span>item-loading</span>)).toBe(false);
     expect(wrapper.find("h1").contains(<span>{0}</span>)).toBe(true);
     expect(wrapper.find("h2").contains(<span>{0}</span>)).toBe(true);
@@ -272,7 +271,6 @@ describe("test item", () => {
 
     await item.resolve();
 
-    expect(wrapper.contains(<div>list-loading</div>)).toBe(false);
     expect(wrapper.contains(<span>item-loading</span>)).toBe(false);
     expect(wrapper.find("h1").contains(<span>1</span>)).toBe(true);
     expect(wrapper.find("h2").contains(<span>1</span>)).toBe(true);

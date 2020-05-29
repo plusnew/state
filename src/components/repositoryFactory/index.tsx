@@ -15,7 +15,7 @@ type itemRequestParameter<
   U extends keyof T
 > = {
   model: U;
-  id: string;
+  id: T[U]["item"]["id"];
 };
 
 type listResponse<T extends entitiesContainerTemplate, U extends keyof T> = {
@@ -31,7 +31,7 @@ type asyncReadListRequest<
 type asyncReadItemRequest<
   T extends entitiesContainerTemplate,
   U extends keyof T
-> = (id: string) => Promise<T[U]["item"]>;
+> = (id: T[U]["item"]["id"]) => Promise<T[U]["item"]>;
 
 type props<T extends entitiesContainerTemplate> = {
   children: ApplicationElement;
@@ -168,7 +168,7 @@ export default <T extends entitiesContainerTemplate>(
     static displayName = __dirname;
     render(Props: Props<props<T>>) {
       let loadingLists: [keyof T, string][] = [];
-      let loadingItems: [keyof T, string][] = [];
+      let loadingItems: [keyof T, number | string][] = [];
 
       // Returns ids, in case cache is present
       const getListCache: syncReadListRequest<T, keyof T> = (request) => {

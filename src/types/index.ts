@@ -1,12 +1,12 @@
 export type entityEmpty<entityName> = {
-  id: string;
+  id: string | number;
   model: entityName;
 };
 
 export type entityTemplate<entityName> = {
   listParameter: any;
   item: {
-    id: string;
+    id: string | number;
     model: entityName;
     attributes: Record<string, unknown>;
     relationships: {
