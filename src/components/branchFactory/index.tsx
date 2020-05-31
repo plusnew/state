@@ -40,7 +40,7 @@ type syncReadListRequest<
   | {
       hasError: false;
       isLoading: boolean;
-      items: T[U]["item"][] | entityEmpty<U>[];
+      items: T[U]["item"][] | entityEmpty<U, T[U]["item"]["id"]>[];
       totalCount: number;
     }
   | {

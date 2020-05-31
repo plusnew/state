@@ -13,7 +13,7 @@ type listRenderProps<
   U extends keyof T
 > = (value: {
   isLoading: boolean;
-  items: entityEmpty<U>[];
+  items: entityEmpty<U, T[U]["item"]["id"]>[];
   totalCount: number;
 }) => ApplicationElement;
 

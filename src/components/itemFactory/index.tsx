@@ -16,27 +16,48 @@ type interact<T extends entitiesContainerTemplate, U extends keyof T> = {
   ) => void;
 };
 
-type itemRenderProps<T extends entitiesContainerTemplate, U extends keyof T> = (
-  value:
-    | { isLoading: false; item: T[U]["item"] }
-    | { isLoading: true; item: T[U]["item"] | null },
+type filledRenderProps<
+  T extends entitiesContainerTemplate,
+  U extends keyof T
+> =
+  | { isLoading: false; item: T[U]["item"]; isEmpty: false }
+  | { isLoading: true; item: T[U]["item"] | null; isEmpty: false };
+
+type itemRenderProps<
+  T extends entitiesContainerTemplate,
+  U extends keyof T,
+  Id extends T[U]["item"]["id"] | null
+> = (
+  value: Id extends null
+    ?
+        | { isLoading: false; item: T[U]["item"] | null; isEmpty: boolean }
+        | { isLoading: true; item: T[U]["item"] | null; isEmpty: false }
+    : filledRenderProps<T, U>,
+
   interact: interact<T, U>
 ) => ApplicationElement;
 
-type props<T extends entitiesContainerTemplate, U extends keyof T> = {
+type props<
+  T extends entitiesContainerTemplate,
+  U extends keyof T,
+  Id extends T[U]["item"]["id"] | null
+> = {
   model: U;
-  id: T[U]["item"]["id"];
-  children: itemRenderProps<T, U>;
+  id: Id;
+  children: itemRenderProps<T, U, Id>;
 };
 
 export default <T extends entitiesContainerTemplate>(
   repositoryContext: Context<repositoryState<T>, repositoryActions<T>>,
   branchContext: Context<branchState<T>, branchActions<T>>
 ) =>
-  class Item<U extends keyof T> extends Component<props<T, U>> {
+  class Item<
+    U extends keyof T,
+    Id extends T[U]["item"]["id"] | null
+  > extends Component<props<T, U, Id>> {
     static displayName = __dirname;
     render(
-      Props: Props<props<T, U>>,
+      Props: Props<props<T, U, Id>>,
       componentInstance: ComponentInstance<any, any, any>
     ) {
       const { dispatch: branchDispatch } = branchContext.findProvider(
@@ -45,18 +66,30 @@ export default <T extends entitiesContainerTemplate>(
 
       const interact: interact<T, U> = {
         commitAttributes: (attributes) => {
-          branchDispatch({
-            type: "ATTRIBUTES_CHANGE",
-            model: Props.getState().model,
-            id: Props.getState().id,
-            payload: attributes,
-          });
+          const id = Props.getState().id;
+
+          if (id === null) {
+            throw new Error("Can not commitAttributes with no current item");
+          } else {
+            branchDispatch({
+              type: "ATTRIBUTES_CHANGE",
+              model: Props.getState().model,
+              id: id as T[U]["item"]["id"],
+              payload: attributes,
+            });
+          }
         },
         commitRelationships: (relationships) => {
+          const id = Props.getState().id;
+
+          if (id === null) {
+            throw new Error("Can not commitRelationships with no current item");
+          }
+
           branchDispatch({
             type: "RELATIONSHIPS_CHANGE",
             model: Props.getState().model,
-            id: Props.getState().id,
+            id: id as T[U]["item"]["id"],
             payload: relationships,
           });
         },
@@ -69,19 +102,31 @@ export default <T extends entitiesContainerTemplate>(
               {(branchState) => (
                 <Props>
                   {(props) => {
-                    const view = branchState.getItem({
-                      model: props.model,
-                      id: props.id,
-                    });
+                    if (props.id === null) {
+                      return ((props.children as any)[0] as itemRenderProps<
+                        T,
+                        U,
+                        Id
+                      >)(
+                        { isLoading: false, isEmpty: true, item: null } as any,
+                        interact
+                      );
+                    } else {
+                      const view = branchState.getItem({
+                        model: props.model,
+                        id: props.id as T[U]["item"]["id"],
+                      });
 
-                    if (view.hasError) {
-                      throw view.error;
+                      if (view.hasError) {
+                        throw view.error;
+                      }
+
+                      return ((props.children as any)[0] as itemRenderProps<
+                        T,
+                        U,
+                        Id
+                      >)({ isEmpty: false, ...view } as any, interact);
                     }
-
-                    return ((props.children as any)[0] as itemRenderProps<
-                      T,
-                      U
-                    >)(view, interact);
                   }}
                 </Props>
               )}

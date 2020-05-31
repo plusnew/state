@@ -19,7 +19,7 @@ type itemRequestParameter<
 };
 
 type listResponse<T extends entitiesContainerTemplate, U extends keyof T> = {
-  items: T[U]["item"][] | entityEmpty<U>[];
+  items: T[U]["item"][] | entityEmpty<U, T[U]["item"]["id"]>[];
   totalCount: number;
 };
 
@@ -81,7 +81,7 @@ type syncReadListRequest<
       hasCache: true;
       hasError: false;
       isLoading: boolean;
-      items: entityEmpty<U>[];
+      items: entityEmpty<U, T[U]["item"]["id"]>[];
       totalCount: number;
     }
   | {
@@ -140,7 +140,7 @@ type listInsertAction<
   model: U;
   query: string;
   payload: {
-    items: T[U]["item"][] | entityEmpty<U>[];
+    items: T[U]["item"][] | entityEmpty<U, T[U]["item"]["id"]>[];
     totalCount: number;
   };
 };
@@ -387,9 +387,10 @@ export default <T extends entitiesContainerTemplate>(
                   [action.model]: {
                     ...previouState.lists[action.model],
                     [action.query]: {
-                      ids: (action.payload.items as entityEmpty<keyof T>[]).map(
-                        (item) => item.id
-                      ),
+                      ids: (action.payload.items as entityEmpty<
+                        keyof T,
+                        string | number
+                      >[]).map((item) => item.id),
                       totalCount: action.payload.totalCount,
                       hasError: false,
                     },

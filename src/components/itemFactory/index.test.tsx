@@ -282,4 +282,155 @@ describe("test item", () => {
     expect(wrapper.find("h2").contains(<span>1</span>)).toBe(true);
     expect(wrapper.find("h3").contains(<span>1</span>)).toBe(true);
   });
+  it("commitAttributes should throw error when item is empty", async () => {
+    const { Repository, Branch, Item } = stateFactory<{
+      blogPost: {
+        listParameter: {
+          sort: "asc" | "desc";
+        };
+        item: blogPostType;
+      };
+    }>();
+
+    const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
+      items: [
+        {
+          id: "1",
+          model: "blogPost" as const,
+        },
+        {
+          id: "2",
+          model: "blogPost" as const,
+        },
+      ],
+      totalCount: 5,
+    }));
+
+    const item = promiseHandler((id: string) => ({
+      id: id,
+      model: "blogPost" as const,
+      attributes: {
+        name: `foo-${id}`,
+        counter: 0,
+      },
+      relationships: {
+        author: {
+          model: "user" as const,
+          id: "1",
+        },
+      },
+    }));
+
+    const wrapper = mount(
+      <Repository
+        requests={{
+          blogPost: {
+            readList: list.fn,
+            readItem: item.fn,
+          },
+        }}
+      >
+        <Branch>
+          <Item model="blogPost" id={null}>
+            {(view, { commitAttributes }) => (
+              <>
+                <span>{view.isLoading ? "isLoading" : "notLoading"}</span>
+                <span>{view.isEmpty ? "isEmpty" : "notEmpty"}</span>
+                <span>{view.item === null ? "itemNull" : "itemNotNUll"}</span>
+                <button
+                  onclick={() => {
+                    commitAttributes({});
+                  }}
+                />
+              </>
+            )}
+          </Item>
+        </Branch>
+      </Repository>
+    );
+
+    expect(wrapper.contains(<span>notLoading</span>));
+    expect(wrapper.contains(<span>isEmpty</span>));
+    expect(wrapper.contains(<span>itemNull</span>));
+    expect(item.fn).not.toHaveBeenCalled();
+    expect(() => {
+      wrapper.find("button").prop("onclick")();
+    }).toThrowError("Can not commitAttributes with no current item");
+  });
+
+  it("commitRelationships should throw error when item is empty", async () => {
+    const { Repository, Branch, Item } = stateFactory<{
+      blogPost: {
+        listParameter: {
+          sort: "asc" | "desc";
+        };
+        item: blogPostType;
+      };
+    }>();
+
+    const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
+      items: [
+        {
+          id: "1",
+          model: "blogPost" as const,
+        },
+        {
+          id: "2",
+          model: "blogPost" as const,
+        },
+      ],
+      totalCount: 5,
+    }));
+
+    const item = promiseHandler((id: string) => ({
+      id: id,
+      model: "blogPost" as const,
+      attributes: {
+        name: `foo-${id}`,
+        counter: 0,
+      },
+      relationships: {
+        author: {
+          model: "user" as const,
+          id: "1",
+        },
+      },
+    }));
+
+    const wrapper = mount(
+      <Repository
+        requests={{
+          blogPost: {
+            readList: list.fn,
+            readItem: item.fn,
+          },
+        }}
+      >
+        <Branch>
+          <Item model="blogPost" id={null as null | string}>
+            {(view, { commitRelationships }) => (
+              <>
+                <span>{view.isLoading ? "isLoading" : "notLoading"}</span>
+                <span>{view.isEmpty ? "isEmpty" : "notEmpty"}</span>
+                <span>{view.item === null ? "itemNull" : "itemNotNUll"}</span>
+                <button
+                  onclick={() => {
+                    commitRelationships({});
+                  }}
+                />
+              </>
+            )}
+          </Item>
+        </Branch>
+      </Repository>
+    );
+
+    expect(wrapper.contains(<span>notLoading</span>));
+    expect(wrapper.contains(<span>isEmpty</span>));
+    expect(wrapper.contains(<span>itemNull</span>));
+    expect(item.fn).not.toHaveBeenCalled();
+    expect(() => {
+      wrapper.find("button").prop("onclick")();
+    }).toThrowError("Can not commitRelationships with no current item");
+  });
 });
