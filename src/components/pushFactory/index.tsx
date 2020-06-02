@@ -7,11 +7,14 @@ import plusnew, {
 import type { entitiesContainerTemplate } from "../../types";
 import type { branchState, branchActions } from "../branchFactory";
 import type { repositoryState, repositoryActions } from "../repositoryFactory";
+import type ComponentInstance from "@plusnew/core/src/instances/types/Component/Instance";
+import { mapObject } from "util/forEach";
 
 type changes<T extends entitiesContainerTemplate> = {
   [U in keyof T]?: {
     [key: string]: {
       id: T[U]["item"]["id"];
+      model: U;
       attributes: T[U]["item"]["attributes"];
       relationships: T[U]["item"]["relationships"];
       changedAttributes: T[U]["item"]["attributes"];
@@ -19,19 +22,17 @@ type changes<T extends entitiesContainerTemplate> = {
     };
   };
 };
+
+type push<T extends entitiesContainerTemplate> = (
+  changes: {
+    [U in keyof T]?: {
+      [key: string]: T[U]["item"];
+    };
+  }
+) => void;
 type pushRenderprops<T extends entitiesContainerTemplate> = (value: {
   changes: changes<T>;
-  push: (
-    changes: {
-      [U in keyof T]?: {
-        [key: string]: {
-          id: T[U]["item"]["id"];
-          attributes: T[U]["item"]["attributes"];
-          relationships: T[U]["item"]["relationships"];
-        };
-      };
-    }
-  ) => void;
+  push: push<T>;
 }) => ApplicationElement;
 
 type props<T extends entitiesContainerTemplate> = {
@@ -44,8 +45,31 @@ export default <T extends entitiesContainerTemplate>(
 ) =>
   class List extends Component<props<T>> {
     static displayName = __dirname;
-    render(Props: Props<props<T>>) {
-      const push = () => {};
+    render(
+      Props: Props<props<T>>,
+      componentInstance: ComponentInstance<any, any, any>
+    ) {
+      const { dispatch: repositoryDispatch } = repositoryContext.findProvider(
+        componentInstance
+      );
+
+      const { dispatch: branchDispatch } = branchContext.findProvider(
+        componentInstance
+      );
+
+      const push: push<T> = (changes) => {
+        repositoryDispatch({
+          type: "ITEMS_INSERT",
+          payload: changes,
+        });
+
+        branchDispatch({
+          type: "RESET_CHANGELOG",
+          payload: mapObject(changes, (change) =>
+            Object.keys(change as any)
+          ) as any,
+        });
+      };
       return (
         <repositoryContext.Consumer>
           {(repositoryState) => (

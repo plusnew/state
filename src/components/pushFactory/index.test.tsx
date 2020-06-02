@@ -167,5 +167,14 @@ describe("test push", () => {
     expect(wrapper.find("h2").contains(<span>{0}</span>)).toBe(true);
     expect(wrapper.find("h3").contains(<span>{0}</span>)).toBe(true);
     expect(wrapper.find({ key: "submit" }).prop("disabled")).toBe(true);
+
+    wrapper.find("h1").find({ key: "increment" }).simulate("click");
+    debugger;
+    wrapper.find({ key: "submit" }).simulate("click");
+
+    expect(wrapper.find("h1").contains(<span>{1}</span>)).toBe(true);
+    expect(wrapper.find("h2").contains(<span>{0}</span>)).toBe(true);
+    expect(wrapper.find("h3").contains(<span>{1}</span>)).toBe(true);
+    expect(wrapper.find({ key: "submit" }).prop("disabled")).toBe(true);
   });
 });

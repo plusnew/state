@@ -1,6 +1,7 @@
 import plusnew, { Component, store } from "@plusnew/core";
 import type { entitiesContainerTemplate, entityEmpty } from "../../types";
 import type { Context, ApplicationElement, Props } from "@plusnew/core";
+import { mapObject } from "util/forEach";
 
 type listRequestParameter<
   T extends entitiesContainerTemplate,
@@ -126,8 +127,17 @@ export type repositoryState<T extends entitiesContainerTemplate> = {
 type itemsInsertAction<T extends entitiesContainerTemplate> = {
   type: "ITEMS_INSERT";
   payload: {
-    [model in keyof T]?: {
-      [id: string]: storeEntity<T, model>;
+    [U in keyof T]?: {
+      [id: string]: T[U]["item"];
+    };
+  };
+};
+
+type itemsInsertErrorAction<T extends entitiesContainerTemplate> = {
+  type: "ITEMS_INSERT_ERROR";
+  payload: {
+    [U in keyof T]?: {
+      [id: string]: any;
     };
   };
 };
@@ -154,6 +164,7 @@ type listErrorAction<T extends entitiesContainerTemplate, U extends keyof T> = {
 
 export type repositoryActions<T extends entitiesContainerTemplate> =
   | itemsInsertAction<T>
+  | itemsInsertErrorAction<T>
   | listInsertAction<T, keyof T>
   | listErrorAction<T, keyof T>;
 
@@ -316,26 +327,19 @@ export default <T extends entitiesContainerTemplate>(
             type: "ITEMS_INSERT",
             payload: {
               [request.model]: {
-                [request.id]: {
-                  isDeleted: false,
-                  payload: result,
-                  hasError: false,
-                },
+                [request.id]: result,
               },
             },
           } as itemsInsertAction<T>);
         } else {
           repository.dispatch({
-            type: "ITEMS_INSERT",
+            type: "ITEMS_INSERT_ERROR",
             payload: {
               [request.model]: {
-                [request.id]: {
-                  hasError: true,
-                  error: error,
-                },
+                [request.id]: error,
               },
             },
-          } as itemsInsertAction<T>);
+          } as itemsInsertErrorAction<T>);
         }
 
         return result;
@@ -424,7 +428,40 @@ export default <T extends entitiesContainerTemplate>(
               Object.entries(action.payload).forEach(([model, items]) => {
                 newEntities[model as keyof T] = {
                   ...previouState.entities[model],
-                  ...items,
+                  ...mapObject(
+                    items,
+                    (item) =>
+                      ({
+                        hasError: false,
+                        isDeleted: false,
+                        payload: item,
+                      } as const)
+                  ),
+                };
+              });
+              return {
+                lists: previouState.lists,
+                getListCache,
+                getItemCache,
+                fetchList,
+                fetchItem,
+                entities: newEntities,
+              };
+            }
+
+            case "ITEMS_INSERT_ERROR": {
+              const newEntities = { ...previouState.entities };
+              Object.entries(action.payload).forEach(([model, items]) => {
+                newEntities[model as keyof T] = {
+                  ...previouState.entities[model],
+                  ...mapObject(
+                    items,
+                    (error) =>
+                      ({
+                        hasError: true,
+                        error: error,
+                      } as const)
+                  ),
                 };
               });
               return {

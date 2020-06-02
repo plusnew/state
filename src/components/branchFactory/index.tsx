@@ -70,10 +70,16 @@ export type branchState<T extends entitiesContainerTemplate> = {
   getItem: syncReadItemRequest<T, keyof T>;
 };
 
-export type branchActions<T extends entitiesContainerTemplate> = changeLog<
-  T,
-  keyof T
->;
+type resetChangelog<T extends entitiesContainerTemplate> = {
+  type: "RESET_CHANGELOG";
+  payload: {
+    [U in keyof T]: (string | number)[];
+  };
+};
+
+export type branchActions<T extends entitiesContainerTemplate> =
+  | changeLog<T, keyof T>
+  | resetChangelog<T>;
 
 type props<> = {
   children: ApplicationElement;
@@ -205,6 +211,21 @@ export default <T extends entitiesContainerTemplate>(
                 getList,
                 getItem,
               };
+
+            case "RESET_CHANGELOG": {
+              return {
+                changeLog: previousState.changeLog.filter(
+                  (change) =>
+                    (change.model in action.payload &&
+                      action.payload[change.model].find(
+                        (resetChangeId) => change.id === resetChangeId
+                      ) !== undefined) === false
+                ),
+                currentChangePosition: previousState.currentChangePosition,
+                getList,
+                getItem,
+              };
+            }
           }
 
           /* istanbul ignore next */
