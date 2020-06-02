@@ -1,14 +1,14 @@
 import plusnew, {
-  Component,
   ApplicationElement,
-  Props,
+  Component,
   Context,
+  Props,
   store,
 } from "@plusnew/core";
-import type { entitiesContainerTemplate, entityEmpty } from "../../types";
-import type { repositoryState, repositoryActions } from "../repositoryFactory";
 import type ComponentInstance from "@plusnew/core/src/instances/types/Component/Instance";
 import type Instance from "@plusnew/core/src/instances/types/Instance";
+import type { entitiesContainerTemplate, entityEmpty } from "../../types";
+import type { repositoryActions, repositoryState } from "../repositoryFactory";
 
 type changedAttributes<
   T extends entitiesContainerTemplate,

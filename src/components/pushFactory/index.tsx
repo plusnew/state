@@ -1,14 +1,14 @@
 import plusnew, {
-  Component,
   ApplicationElement,
-  Props,
+  Component,
   Context,
+  Props,
 } from "@plusnew/core";
-import type { entitiesContainerTemplate } from "../../types";
-import type { branchState, branchActions } from "../branchFactory";
-import type { repositoryState, repositoryActions } from "../repositoryFactory";
 import type ComponentInstance from "@plusnew/core/src/instances/types/Component/Instance";
-import { mapObject } from "util/forEach";
+import type { entitiesContainerTemplate } from "../../types";
+import { mapObject } from "../../util/forEach";
+import type { branchActions, branchState } from "../branchFactory";
+import type { repositoryActions, repositoryState } from "../repositoryFactory";
 
 type changes<T extends entitiesContainerTemplate> = {
   [U in keyof T]?: {
