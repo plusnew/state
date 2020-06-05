@@ -91,6 +91,7 @@ export default <T extends entitiesContainerTemplate>(
                         if (change.id in changes[change.model] === false) {
                           changes[change.model][change.id] = {
                             id: change.id,
+                            model: change.model,
                             attributes: {
                               ...original.attributes,
                             },
