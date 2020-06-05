@@ -139,8 +139,6 @@ export default <T extends entitiesContainerTemplate>(
           let attributeChanges = {};
           let relationshipChanges = {};
 
-          debugger;
-
           const changeLog = branchStore.getState().changeLog;
           for (let i = 0; i < changeLog.length; i++) {
             const change = changeLog[i];
