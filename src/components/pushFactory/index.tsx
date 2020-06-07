@@ -43,13 +43,24 @@ type singleRelationship = entityEmpty<string, string | number>;
 type manyRelationships = entityEmpty<string, string | number>[];
 
 type relationships = singleRelationship | manyRelationships;
+
+function isSameSingleRelationship(
+  a: singleRelationship,
+  b: singleRelationship
+) {
+  return a.model === b.model && a.id === b.id;
+}
+
 function isSameRelationship(a: relationships, b: relationships) {
   if (Array.isArray(a) && Array.isArray(b)) {
-    return a.length === b.length;
-  } else if (Array.isArray(a) === false && Array.isArray(b) === false) {
     return (
-      (a as singleRelationship).model === (b as singleRelationship).model &&
-      (a as singleRelationship).id === (b as singleRelationship).id
+      a.length === b.length &&
+      b.every((value, index) => isSameSingleRelationship(a[index], value))
+    );
+  } else if (Array.isArray(a) === false && Array.isArray(b) === false) {
+    return isSameSingleRelationship(
+      a as singleRelationship,
+      b as singleRelationship
     );
   }
   return false;
