@@ -5,7 +5,7 @@ import plusnew, {
   Props,
 } from "@plusnew/core";
 import type ComponentInstance from "@plusnew/core/src/instances/types/Component/Instance";
-import type { entitiesContainerTemplate } from "../../types";
+import type { entitiesContainerTemplate, entityEmpty } from "../../types";
 import { mapObject } from "../../util/forEach";
 import type { branchActions, branchState } from "../branchFactory";
 import type { repositoryActions, repositoryState } from "../repositoryFactory";
@@ -38,6 +38,22 @@ type pushRenderprops<T extends entitiesContainerTemplate> = (value: {
 type props<T extends entitiesContainerTemplate> = {
   children: pushRenderprops<T>;
 };
+
+type singleRelationship = entityEmpty<string, string | number>;
+type manyRelationships = entityEmpty<string, string | number>[];
+
+type relationships = singleRelationship | manyRelationships;
+function isSameRelationship(a: relationships, b: relationships) {
+  if (Array.isArray(a) && Array.isArray(b)) {
+    return a.length === b.length;
+  } else if (Array.isArray(a) === false && Array.isArray(b) === false) {
+    return (
+      (a as singleRelationship).model === (b as singleRelationship).model &&
+      (a as singleRelationship).id === (b as singleRelationship).id
+    );
+  }
+  return false;
+}
 
 export default <T extends entitiesContainerTemplate>(
   repositoryContext: Context<repositoryState<T>, repositoryActions<T>>,
@@ -80,7 +96,10 @@ export default <T extends entitiesContainerTemplate>(
                     const changes: any = {};
                     for (let i = 0; i < branchState.changeLog.length; i++) {
                       const change = branchState.changeLog[i];
-                      if (change.type === "ATTRIBUTES_CHANGE") {
+                      if (
+                        change.type === "ATTRIBUTES_CHANGE" ||
+                        change.type === "RELATIONSHIPS_CHANGE"
+                      ) {
                         const original = (repositoryState.entities[
                           change.model
                         ] as any)[change.id].payload as T[keyof T]["item"];
@@ -104,25 +123,60 @@ export default <T extends entitiesContainerTemplate>(
                         }
 
                         let deleted = false;
-                        for (const attributeName in change.payload) {
-                          if (
-                            change.payload[attributeName] ===
-                            original.attributes[attributeName]
-                          ) {
-                            delete changes[change.model][change.id]
-                              .changedAttributes[attributeName];
-                            changes[change.model][change.id].attributes[
-                              attributeName
-                            ] = change.payload[attributeName];
 
-                            deleted = true;
-                          } else {
-                            changes[change.model][change.id].attributes[
-                              attributeName
-                            ] = change.payload[attributeName];
-                            changes[change.model][change.id].changedAttributes[
-                              attributeName
-                            ] = change.payload[attributeName];
+                        if (change.type === "ATTRIBUTES_CHANGE") {
+                          for (const attributeName in change.payload) {
+                            if (
+                              change.payload[attributeName] ===
+                              original.attributes[attributeName]
+                            ) {
+                              delete changes[change.model][change.id]
+                                .changedAttributes[attributeName];
+                              changes[change.model][change.id].attributes[
+                                attributeName
+                              ] = change.payload[attributeName];
+
+                              deleted = true;
+                            } else {
+                              changes[change.model][change.id].attributes[
+                                attributeName
+                              ] = change.payload[attributeName];
+
+                              changes[change.model][
+                                change.id
+                              ].changedAttributes[attributeName] =
+                                change.payload[attributeName];
+                            }
+                          }
+                        } else if (change.type === "RELATIONSHIPS_CHANGE") {
+                          for (const relationshipName in change.payload) {
+                            if (
+                              isSameRelationship(
+                                original.relationships[
+                                  relationshipName
+                                ] as relationships,
+                                change.payload[
+                                  relationshipName
+                                ] as relationships
+                              )
+                            ) {
+                              delete changes[change.model][change.id]
+                                .changedRelationships[relationshipName];
+                              changes[change.model][change.id].relationships[
+                                relationshipName
+                              ] = change.payload[relationshipName];
+
+                              deleted = true;
+                            } else {
+                              changes[change.model][change.id].relationships[
+                                relationshipName
+                              ] = change.payload[relationshipName];
+
+                              changes[change.model][
+                                change.id
+                              ].changedRelationships[relationshipName] =
+                                change.payload[relationshipName];
+                            }
                           }
                         }
 
