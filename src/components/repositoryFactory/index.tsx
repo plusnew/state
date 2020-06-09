@@ -2,6 +2,7 @@ import plusnew, { Component, store } from "@plusnew/core";
 import type { ApplicationElement, Context, Props } from "@plusnew/core";
 import type { entitiesContainerTemplate, entityEmpty } from "../../types";
 import { mapObject } from "../../util/forEach";
+import { fromEntries } from "../../util/fromEntries";
 
 type listRequestParameter<
   T extends entitiesContainerTemplate,
@@ -364,17 +365,16 @@ export default <T extends entitiesContainerTemplate>(
                       ...previouState.entities,
                       [action.model]: {
                         ...previouState.entities[action.model],
-                        ...Object.fromEntries(
-                          (action.payload.items as T[keyof T]["item"][]).map(
-                            (item) => [
-                              item.id,
-                              {
-                                hasError: false,
-                                isDeleted: false,
-                                payload: item,
-                              },
-                            ]
-                          )
+                        ...fromEntries(
+                          action.payload.items as T[keyof T]["item"][],
+                          (item) => [
+                            `${item.id}`,
+                            {
+                              hasError: false,
+                              isDeleted: false,
+                              payload: item,
+                            },
+                          ]
                         ),
                       },
                     }
