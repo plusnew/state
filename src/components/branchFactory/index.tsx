@@ -108,9 +108,15 @@ export default <T extends entitiesContainerTemplate>(
           return result;
         }
         if (result.hasCache) {
+          let isLoading = result.isLoading;
+          if (result.hasInvalidCache === true && isLoading === false) {
+            isLoading = true;
+            repositoryState.fetchList(request);
+          }
+
           return {
             hasError: false,
-            isLoading: result.isLoading,
+            isLoading: isLoading,
             items: result.items,
             totalCount: result.totalCount,
           };

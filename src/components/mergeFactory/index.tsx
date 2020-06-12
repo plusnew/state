@@ -23,20 +23,20 @@ type changes<T extends entitiesContainerTemplate> = {
   };
 };
 
-type push<T extends entitiesContainerTemplate> = (
+type merge<T extends entitiesContainerTemplate> = (
   changes: {
     [U in keyof T]?: {
       [key: string]: T[U]["item"];
     };
   }
 ) => void;
-type pushRenderprops<T extends entitiesContainerTemplate> = (value: {
+type mergeRenderprops<T extends entitiesContainerTemplate> = (value: {
   changes: changes<T>;
-  push: push<T>;
+  merge: merge<T>;
 }) => ApplicationElement;
 
 type props<T extends entitiesContainerTemplate> = {
-  children: pushRenderprops<T>;
+  children: mergeRenderprops<T>;
 };
 
 type singleRelationship = entityEmpty<string, string | number>;
@@ -84,10 +84,13 @@ export default <T extends entitiesContainerTemplate>(
         componentInstance
       );
 
-      const push: push<T> = (changes) => {
+      const merge: merge<T> = (changes) => {
         repositoryDispatch({
           type: "ITEMS_INSERT",
-          payload: changes,
+          payload: {
+            items: changes,
+            invalidateInvolvedListCahes: true,
+          },
         });
 
         branchDispatch({
@@ -213,9 +216,9 @@ export default <T extends entitiesContainerTemplate>(
                       }
                     }
 
-                    return ((props.children as any)[0] as pushRenderprops<T>)({
+                    return ((props.children as any)[0] as mergeRenderprops<T>)({
                       changes: changes,
-                      push,
+                      merge,
                     });
                   }}
                 </Props>

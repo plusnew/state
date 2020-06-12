@@ -62,6 +62,7 @@ type storeList = {
         hasError: false;
         ids: string[];
         totalCount: number;
+        hasInvalidCache: boolean;
       }
     | {
         hasError: true;
@@ -82,6 +83,7 @@ type syncReadListRequest<
   | {
       hasCache: true;
       hasError: false;
+      hasInvalidCache: boolean;
       isLoading: boolean;
       items: entityEmpty<U, T[U]["item"]["id"]>[];
       totalCount: number;
@@ -128,9 +130,12 @@ export type repositoryState<T extends entitiesContainerTemplate> = {
 type itemsInsertAction<T extends entitiesContainerTemplate> = {
   type: "ITEMS_INSERT";
   payload: {
-    [U in keyof T]?: {
-      [id: string]: T[U]["item"];
+    items: {
+      [U in keyof T]?: {
+        [id: string]: T[U]["item"];
+      };
     };
+    invalidateInvolvedListCahes: boolean;
   };
 };
 
@@ -210,6 +215,7 @@ export default <T extends entitiesContainerTemplate>(
           return {
             hasError: false,
             hasCache: true,
+            hasInvalidCache: result.hasInvalidCache,
             isLoading,
             items: result.ids.map((id) => ({
               id: id,
@@ -327,9 +333,12 @@ export default <T extends entitiesContainerTemplate>(
           repository.dispatch({
             type: "ITEMS_INSERT",
             payload: {
-              [request.model]: {
-                [request.id]: result,
+              items: {
+                [request.model]: {
+                  [request.id]: result,
+                },
               },
+              invalidateInvolvedListCahes: false,
             },
           } as itemsInsertAction<T>);
         } else {
@@ -425,7 +434,7 @@ export default <T extends entitiesContainerTemplate>(
 
             case "ITEMS_INSERT": {
               const newEntities = { ...previouState.entities };
-              Object.entries(action.payload).forEach(([model, items]) => {
+              Object.entries(action.payload.items).forEach(([model, items]) => {
                 newEntities[model as keyof T] = {
                   ...previouState.entities[model],
                   ...mapObject(
@@ -434,13 +443,25 @@ export default <T extends entitiesContainerTemplate>(
                       ({
                         hasError: false,
                         isDeleted: false,
+                        hasInvalidCache: false,
                         payload: item,
                       } as const)
                   ),
                 };
               });
               return {
-                lists: previouState.lists,
+                lists: action.payload.invalidateInvolvedListCahes
+                  ? mapObject(
+                      previouState.lists,
+                      (listContainer, model) =>
+                        (model in action.payload.items
+                          ? mapObject(listContainer, (list) => ({
+                              ...list,
+                              hasInvalidCache: true,
+                            }))
+                          : listContainer) as storeList
+                    )
+                  : previouState.lists,
                 getListCache,
                 getItemCache,
                 fetchList,

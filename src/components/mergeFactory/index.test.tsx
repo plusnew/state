@@ -21,9 +21,9 @@ type blogPostType = {
   };
 };
 
-describe("test push", () => {
-  it("commitAttributes should add changes to push, and remove them if it is equal with repo", async () => {
-    const { Repository, Branch, Item, Push } = stateFactory<{
+describe("test Merge", () => {
+  it("commitAttributes should add changes to Merge, and remove them if it is equal with repo", async () => {
+    const { Repository, Branch, Item, Merge } = stateFactory<{
       blogPost: {
         listParameter: {
           sort: "asc" | "desc";
@@ -110,15 +110,15 @@ describe("test push", () => {
             }
           </Item>
 
-          <Push>
-            {({ changes, push }) => (
+          <Merge>
+            {({ changes, merge }) => (
               <button
                 key="submit"
                 disabled={Object.keys(changes).length === 0}
-                onclick={() => push(changes)}
+                onclick={() => merge(changes)}
               />
             )}
-          </Push>
+          </Merge>
         </Branch>
 
         <Branch>
@@ -184,7 +184,7 @@ describe("test push", () => {
     expect(wrapper.find({ key: "submit" }).prop("disabled")).toBe(false);
   });
 
-  it("commitRelationships should add changes to push, and remove them if it is equal with repo, for multiple relationship", async () => {
+  it("commitRelationships should add changes to Merge, and remove them if it is equal with repo, for multiple relationship", async () => {
     type blogPostType = {
       id: string;
       model: "blogPost";
@@ -200,7 +200,7 @@ describe("test push", () => {
       };
     };
 
-    const { Repository, Branch, Item, Push } = stateFactory<{
+    const { Repository, Branch, Item, Merge } = stateFactory<{
       blogPost: {
         listParameter: {
           sort: "asc" | "desc";
@@ -295,15 +295,15 @@ describe("test push", () => {
             }
           </Item>
 
-          <Push>
-            {({ changes, push }) => (
+          <Merge>
+            {({ changes, merge }) => (
               <button
                 key="submit"
                 disabled={Object.keys(changes).length === 0}
-                onclick={() => push(changes)}
+                onclick={() => merge(changes)}
               />
             )}
-          </Push>
+          </Merge>
         </Branch>
 
         <Branch>
@@ -375,7 +375,7 @@ describe("test push", () => {
     expect(wrapper.find({ key: "submit" }).prop("disabled")).toBe(false);
   });
 
-  it("commitRelationships should add changes to push, and remove them if it is equal with repo, for multiple relationship, with different quantity", async () => {
+  it("commitRelationships should add changes to Merge, and remove them if it is equal with repo, for multiple relationship, with different quantity", async () => {
     type blogPostType = {
       id: string;
       model: "blogPost";
@@ -391,7 +391,7 @@ describe("test push", () => {
       };
     };
 
-    const { Repository, Branch, Item, Push } = stateFactory<{
+    const { Repository, Branch, Item, Merge } = stateFactory<{
       blogPost: {
         listParameter: {
           sort: "asc" | "desc";
@@ -490,15 +490,15 @@ describe("test push", () => {
             }
           </Item>
 
-          <Push>
-            {({ changes, push }) => (
+          <Merge>
+            {({ changes, merge }) => (
               <button
                 key="submit"
                 disabled={Object.keys(changes).length === 0}
-                onclick={() => push(changes)}
+                onclick={() => merge(changes)}
               />
             )}
-          </Push>
+          </Merge>
         </Branch>
 
         <Branch>
@@ -567,8 +567,8 @@ describe("test push", () => {
     expect(wrapper.find({ key: "submit" }).prop("disabled")).toBe(false);
   });
 
-  it("commitRelationships should add changes to push, and remove them if it is equal with repo, for single relationships", async () => {
-    const { Repository, Branch, Item, Push } = stateFactory<{
+  it("commitRelationships should add changes to Merge, and remove them if it is equal with repo, for single relationships", async () => {
+    const { Repository, Branch, Item, Merge } = stateFactory<{
       blogPost: {
         listParameter: {
           sort: "asc" | "desc";
@@ -661,15 +661,15 @@ describe("test push", () => {
             }
           </Item>
 
-          <Push>
-            {({ changes, push }) => (
+          <Merge>
+            {({ changes, merge }) => (
               <button
                 key="submit"
                 disabled={Object.keys(changes).length === 0}
-                onclick={() => push(changes)}
+                onclick={() => merge(changes)}
               />
             )}
-          </Push>
+          </Merge>
         </Branch>
 
         <Branch>
@@ -736,5 +736,147 @@ describe("test push", () => {
     expect(wrapper.find("h2").contains(<span>{0}</span>)).toBe(true);
     expect(wrapper.find("h3").contains(<span>{1}</span>)).toBe(true);
     expect(wrapper.find({ key: "submit" }).prop("disabled")).toBe(false);
+  });
+
+  it("merge invalidates list cache", async () => {
+    const { Repository, Branch, Item, List, Merge } = stateFactory<{
+      blogPost: {
+        listParameter: {
+          sort: "asc" | "desc";
+        };
+        item: blogPostType;
+      };
+    }>();
+
+    const items = [
+      {
+        id: "0",
+        model: "blogPost" as const,
+      },
+      {
+        id: "1",
+        model: "blogPost" as const,
+      },
+    ];
+
+    const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
+      items,
+      totalCount: 5,
+    }));
+
+    const item = promiseHandler((id: string) => ({
+      id: id,
+      model: "blogPost" as const,
+      attributes: {
+        name: `foo-${id}`,
+        counter: 0,
+      },
+      relationships: {
+        author: {
+          model: "user" as const,
+          id: 0,
+        },
+      },
+    }));
+
+    const wrapper = mount(
+      <Repository
+        requests={{
+          blogPost: {
+            readList: list.fn,
+            readItem: item.fn,
+          },
+        }}
+      >
+        <Branch>
+          <List model="blogPost" parameter={{ sort: "asc" }}>
+            {(listState) => (
+              <>
+                {listState.isLoading && <div>list-loading</div>}
+                {listState.items.map((item) => (
+                  <Item model="blogPost" id={item.id}>
+                    {(view) =>
+                      view.isLoading ? (
+                        <span>item-loading</span>
+                      ) : (
+                        <span class="name">{view.item.attributes.name}</span>
+                      )
+                    }
+                  </Item>
+                ))}
+                <Merge>
+                  {({ merge }) => (
+                    <button
+                      onclick={() => {
+                        const id = `${items.length}`;
+                        items.push({
+                          id: id,
+                          model: "blogPost",
+                        });
+                        merge({
+                          blogPost: {
+                            [id]: {
+                              id: id,
+                              model: "blogPost",
+                              attributes: {
+                                name: `bar-${id}`,
+                                counter: 0,
+                              },
+                              relationships: {
+                                author: {
+                                  model: "user",
+                                  id: 0,
+                                },
+                              },
+                            },
+                          },
+                        });
+                      }}
+                    />
+                  )}
+                </Merge>
+              </>
+            )}
+          </List>
+        </Branch>
+      </Repository>
+    );
+
+    expect(wrapper.contains(<div>list-loading</div>)).toBe(true);
+    expect(wrapper.contains(<span>item-loading</span>)).toBe(false);
+
+    await list.resolve();
+
+    expect(wrapper.contains(<div>list-loading</div>)).toBe(false);
+    expect(wrapper.contains(<span>item-loading</span>)).toBe(true);
+
+    await item.resolve();
+
+    expect(wrapper.contains(<div>list-loading</div>)).toBe(false);
+    expect(wrapper.contains(<span>item-loading</span>)).toBe(false);
+    expect(wrapper.containsMatchingElement(<span>foo-0</span>)).toBe(true);
+    expect(wrapper.containsMatchingElement(<span>foo-1</span>)).toBe(true);
+    expect(wrapper.find(".name").length).toBe(2);
+
+    wrapper.find("button").simulate("click");
+
+    expect(wrapper.contains(<div>list-loading</div>)).toBe(true);
+    expect(wrapper.containsMatchingElement(<span>item-loading</span>)).toBe(
+      false
+    );
+    expect(wrapper.containsMatchingElement(<span>foo-0</span>)).toBe(true);
+    expect(wrapper.containsMatchingElement(<span>foo-1</span>)).toBe(true);
+    expect(wrapper.find(".name").length).toBe(2);
+
+    await list.resolve();
+
+    expect(wrapper.contains(<div>list-loading</div>)).toBe(false);
+    expect(wrapper.containsMatchingElement(<span>item-loading</span>)).toBe(
+      false
+    );
+    expect(wrapper.containsMatchingElement(<span>foo-0</span>)).toBe(true);
+    expect(wrapper.containsMatchingElement(<span>foo-1</span>)).toBe(true);
+    expect(wrapper.containsMatchingElement(<span>bar-2</span>)).toBe(true);
+    expect(wrapper.find(".name").length).toBe(3);
   });
 });
