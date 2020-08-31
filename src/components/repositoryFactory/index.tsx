@@ -242,7 +242,7 @@ export default <T extends entitiesContainerTemplate>(
 
         if (
           repositoryState.entities[request.model] !== undefined &&
-          request.id in repositoryState.entities[request.model]
+          (request.id as string) in repositoryState.entities[request.model]
         ) {
           const result: storeEntity<T, keyof T> = (repositoryState.entities[
             request.model
@@ -496,8 +496,6 @@ export default <T extends entitiesContainerTemplate>(
             }
           }
 
-          /* istanbul ignore next */
-          throw new Error("No such action");
         }
       );
 
