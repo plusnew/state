@@ -349,9 +349,9 @@ describe("test item", () => {
       </Repository>
     );
 
-    expect(wrapper.contains(<span>notLoading</span>));
-    expect(wrapper.contains(<span>isEmpty</span>));
-    expect(wrapper.contains(<span>itemNull</span>));
+    expect(wrapper.contains(<span>notLoading</span>)).toBe(true);
+    expect(wrapper.contains(<span>isEmpty</span>)).toBe(true);
+    expect(wrapper.contains(<span>itemNull</span>)).toBe(true);
     expect(item.fn).not.toHaveBeenCalled();
     expect(() => {
       wrapper.find("button").prop("onclick")();

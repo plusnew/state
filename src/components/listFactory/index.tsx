@@ -15,11 +15,12 @@ type listRenderProps<
   isLoading: boolean;
   items: entityEmpty<U, T[U]["item"]["id"]>[];
   totalCount: number;
+  isEmpty: boolean;
 }) => ApplicationElement;
 
 type props<T extends entitiesContainerTemplate, U extends keyof T> = {
   model: U;
-  parameter: T[U]["listParameter"];
+  parameter: T[U]["listParameter"] | null;
   children: listRenderProps<T, U>;
 };
 
@@ -37,6 +38,17 @@ export default <T extends entitiesContainerTemplate>(
               {(branchState) => (
                 <Props>
                   {(props) => {
+                    if (props.parameter === null) {
+                      return ((props.children as any)[0] as listRenderProps<
+                        T,
+                        keyof T
+                      >)({
+                        isEmpty: true,
+                        items: [],
+                        totalCount: 0,
+                        isLoading: false,
+                      });
+                    }
                     const view = branchState.getList({
                       model: props.model,
                       parameter: props.parameter,
@@ -49,7 +61,10 @@ export default <T extends entitiesContainerTemplate>(
                     return ((props.children as any)[0] as listRenderProps<
                       T,
                       keyof T
-                    >)(view);
+                    >)({
+                      isEmpty: false,
+                      ...view,
+                    });
                   }}
                 </Props>
               )}

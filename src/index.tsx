@@ -4,7 +4,7 @@ import type { branchActions, branchState } from "./components/branchFactory";
 import itemFactory from "./components/itemFactory";
 import listFactory from "./components/listFactory";
 import mergeFactory from "./components/mergeFactory";
-import reducerFactory from "./components/reducerFactory";
+import reduceFactory from "./components/reduceFactory";
 import repositoryFactory from "./components/repositoryFactory";
 import type {
   repositoryActions,
@@ -21,7 +21,7 @@ export default function factory<T extends entitiesContainerTemplate>() {
     Branch: branchFactory(repositoryContext, branchContext),
     List: listFactory(repositoryContext, branchContext),
     Item: itemFactory(repositoryContext, branchContext),
-    Reducer: reducerFactory(repositoryContext, branchContext),
+    Reduce: reduceFactory(repositoryContext, branchContext),
     Merge: mergeFactory(repositoryContext, branchContext),
   };
 }

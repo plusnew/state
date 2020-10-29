@@ -1,6 +1,6 @@
 {
 	"name": "@plusnew/state",
-	"version": "0.9.0",
+	"version": "0.10.0",
 	"description": "library for doing complext statemanagement in plusnew",
 	"main": "src/index.tsx",
 	"module": "src/index.tsx",
@@ -27,8 +27,8 @@
 		"@plusnew/driver-dom": "1.1.2",
 		"@plusnew/enzyme-adapter": "^1.1.0",
 		"@types/jest": "^26.0.0",
-		"@typescript-eslint/eslint-plugin": "^4.0.0",
-		"@typescript-eslint/parser": "^3.10.1",
+		"@typescript-eslint/eslint-plugin": "^4.6.0",
+		"@typescript-eslint/parser": "^4.6.0",
 		"enzyme": "^3.11.0",
 		"eslint": "^7.1.0",
 		"eslint-config-prettier": "^6.11.0",
