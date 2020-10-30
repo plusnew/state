@@ -1,8 +1,13 @@
 import plusnew, { Component, store } from "@plusnew/core";
 import type { ApplicationElement, Context, Props } from "@plusnew/core";
-import type { entitiesContainerTemplate, entityEmpty } from "../../types";
+import type {
+  entitiesContainerTemplate,
+  entityEmpty,
+  idTemplate,
+} from "../../types";
 import { mapObject } from "../../util/forEach";
 import { fromEntries } from "../../util/fromEntries";
+import idSerializer from "../../util/idSerializer";
 
 type listRequestParameter<
   T extends entitiesContainerTemplate,
@@ -233,20 +238,21 @@ export default <T extends entitiesContainerTemplate>(
 
       // Returns item in case cache is present
       const getItemCache: syncReadItemRequest<T, keyof T> = (request) => {
+        const requestId = idSerializer(request.id);
         const isLoading =
           loadingItems.find(
-            ([model, id]) => model === request.model && id === request.id
+            ([model, id]) => model === request.model && id === requestId
           ) !== undefined;
 
         const repositoryState = repository.getState();
 
         if (
           repositoryState.entities[request.model] !== undefined &&
-          (request.id as string) in repositoryState.entities[request.model]
+          requestId in repositoryState.entities[request.model]
         ) {
           const result: storeEntity<T, keyof T> = (repositoryState.entities[
             request.model
-          ] as any)[request.id];
+          ] as any)[requestId];
 
           if (result.hasError) {
             return {
@@ -312,7 +318,8 @@ export default <T extends entitiesContainerTemplate>(
       async function fetchItem<U extends keyof T>(
         request: itemRequestParameter<T, U>
       ) {
-        loadingItems.push([request.model, request.id]);
+        const requestId = idSerializer(request.id);
+        loadingItems.push([request.model, requestId]);
 
         let error;
         let result: T[U]["item"] | null = null;
@@ -326,7 +333,7 @@ export default <T extends entitiesContainerTemplate>(
 
         loadingItems = loadingItems.filter(
           ([model, id]) =>
-            (model === request.model && id === request.id) === false
+            (model === request.model && id === requestId) === false
         );
 
         if (result) {
@@ -335,7 +342,7 @@ export default <T extends entitiesContainerTemplate>(
             payload: {
               items: {
                 [request.model]: {
-                  [request.id]: result,
+                  [requestId]: result,
                 },
               },
               invalidateInvolvedListCahes: false,
@@ -346,7 +353,7 @@ export default <T extends entitiesContainerTemplate>(
             type: "ITEMS_INSERT_ERROR",
             payload: {
               [request.model]: {
-                [request.id]: error,
+                [requestId]: error,
               },
             },
           } as itemsInsertErrorAction<T>);
@@ -377,7 +384,7 @@ export default <T extends entitiesContainerTemplate>(
                         ...fromEntries(
                           action.payload.items as T[keyof T]["item"][],
                           (item) => [
-                            `${item.id}`,
+                            `${idSerializer(item.id)}`,
                             {
                               hasError: false,
                               isDeleted: false,
@@ -402,7 +409,7 @@ export default <T extends entitiesContainerTemplate>(
                     [action.query]: {
                       ids: (action.payload.items as entityEmpty<
                         keyof T,
-                        string | number
+                        idTemplate
                       >[]).map((item) => item.id),
                       totalCount: action.payload.totalCount,
                       hasError: false,
@@ -495,7 +502,6 @@ export default <T extends entitiesContainerTemplate>(
               };
             }
           }
-
         }
       );
 

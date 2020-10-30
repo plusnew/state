@@ -1,4 +1,6 @@
-export type entityEmpty<entityName, id extends string | number> = {
+export type idTemplate = string | number | { [key: string]: idTemplate };
+
+export type entityEmpty<entityName, id extends idTemplate> = {
   id: id;
   model: entityName;
 };
@@ -6,13 +8,13 @@ export type entityEmpty<entityName, id extends string | number> = {
 export type entityTemplate<entityName> = {
   listParameter: any;
   item: {
-    id: string | number;
+    id: idTemplate;
     model: entityName;
     attributes: Record<string, unknown>;
     relationships: {
       [key: string]:
-        | entityEmpty<entityName, string | number>
-        | entityEmpty<entityName, string | number>[];
+        | entityEmpty<entityName, idTemplate>
+        | entityEmpty<entityName, idTemplate>[];
     };
   };
 };

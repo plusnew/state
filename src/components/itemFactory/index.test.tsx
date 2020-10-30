@@ -1,4 +1,4 @@
-import plusnew from "@plusnew/core";
+import plusnew, { store } from "@plusnew/core";
 import enzymeAdapterPlusnew, { mount } from "@plusnew/enzyme-adapter";
 import { configure } from "enzyme";
 import stateFactory from "../../index";
@@ -432,5 +432,104 @@ describe("test item", () => {
     expect(() => {
       wrapper.find("button").prop("onclick")();
     }).toThrowError("Can not commitRelationships with no current item");
+  });
+
+  it("id should be an object too", async () => {
+    type blogPostType = {
+      id: { foo: string; bar: string };
+      model: "blogPost";
+      attributes: {
+        name: string;
+        counter: number;
+      };
+      relationships: {
+        author: {
+          model: "user";
+          id: string;
+        };
+      };
+    };
+
+    const { Repository, Branch, Item } = stateFactory<{
+      blogPost: {
+        listParameter: {
+          sort: "asc" | "desc";
+        };
+        item: blogPostType;
+      };
+    }>();
+
+    const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
+      items: [
+        {
+          id: { foo: "foo1", bar: "bar2" },
+          model: "blogPost" as const,
+        },
+      ],
+      totalCount: 1,
+    }));
+
+    const item = promiseHandler((id: { foo: string; bar: string }) => ({
+      id: id,
+      model: "blogPost" as const,
+      attributes: {
+        name: `${id.foo}`,
+        counter: 0,
+      },
+      relationships: {
+        author: {
+          model: "user" as const,
+          id: "1",
+        },
+      },
+    }));
+
+    const toggle = store(true);
+
+    const wrapper = mount(
+      <Repository
+        requests={{
+          blogPost: {
+            readList: list.fn,
+            readItem: item.fn,
+          },
+        }}
+      >
+        <Branch>
+          <toggle.Observer>
+            {(toggleState) => (
+              <Item
+                model="blogPost"
+                id={
+                  toggleState
+                    ? { foo: "foo1", bar: "bar1" }
+                    : { bar: "bar1", foo: "foo1" }
+                }
+              >
+                {(view) =>
+                  view.isLoading ? (
+                    <span>item-loading</span>
+                  ) : (
+                    <h1>
+                      <span>{view.item.attributes.name}</span>
+                    </h1>
+                  )
+                }
+              </Item>
+            )}
+          </toggle.Observer>
+        </Branch>
+      </Repository>
+    );
+
+    expect(wrapper.contains(<span>item-loading</span>)).toBe(true);
+
+    await item.resolve();
+
+    expect(wrapper.find("h1").contains(<span>foo1</span>)).toBe(true);
+
+    toggle.dispatch(false);
+
+    expect(wrapper.find("h1").contains(<span>foo1</span>)).toBe(true);
   });
 });

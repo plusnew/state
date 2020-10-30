@@ -814,8 +814,8 @@ describe("test Merge", () => {
                           model: "blogPost",
                         });
                         merge({
-                          blogPost: {
-                            [id]: {
+                          blogPost: [
+                            {
                               id: id,
                               model: "blogPost",
                               attributes: {
@@ -829,7 +829,7 @@ describe("test Merge", () => {
                                 },
                               },
                             },
-                          },
+                          ],
                         });
                       }}
                     />

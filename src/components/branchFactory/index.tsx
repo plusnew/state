@@ -9,6 +9,7 @@ import type ComponentInstance from "@plusnew/core/src/instances/types/Component/
 import type Instance from "@plusnew/core/src/instances/types/Instance";
 import type { entitiesContainerTemplate, entityEmpty } from "../../types";
 import type { repositoryActions, repositoryState } from "../repositoryFactory";
+import idSerializer from "../../util/idSerializer";
 
 type changedAttributes<
   T extends entitiesContainerTemplate,
@@ -16,7 +17,7 @@ type changedAttributes<
 > = {
   type: "ATTRIBUTES_CHANGE";
   model: U;
-  id: T[U]["item"]["id"];
+  id: string;
   payload: Partial<T[U]["item"]["attributes"]>;
 };
 
@@ -26,7 +27,7 @@ type changedRelationships<
 > = {
   type: "RELATIONSHIPS_CHANGE";
   model: U;
-  id: T[U]["item"]["id"];
+  id: string;
   payload: Partial<T[U]["item"]["relationships"]>;
 };
 
@@ -73,7 +74,7 @@ export type branchState<T extends entitiesContainerTemplate> = {
 type resetChangelog<T extends entitiesContainerTemplate> = {
   type: "RESET_CHANGELOG";
   payload: {
-    [U in keyof T]: (string | number)[];
+    [U in keyof T]: string[];
   };
 };
 
@@ -137,6 +138,8 @@ export default <T extends entitiesContainerTemplate>(
       const getItem: syncReadItemRequest<T, keyof T> = (request) => {
         const repositoryState = repository.getState();
         const result = repositoryState.getItemCache(request);
+        const requestId = idSerializer(request.id);
+        debugger;
 
         if (result.hasError) {
           return result;
@@ -148,10 +151,7 @@ export default <T extends entitiesContainerTemplate>(
           const changeLog = branchStore.getState().changeLog;
           for (let i = 0; i < changeLog.length; i++) {
             const change = changeLog[i];
-            if (
-              change.model === result.item.model &&
-              change.id === result.item.id
-            ) {
+            if (change.model === result.item.model && change.id === requestId) {
               switch (change.type) {
                 case "ATTRIBUTES_CHANGE": {
                   attributeChanges = {
@@ -176,7 +176,7 @@ export default <T extends entitiesContainerTemplate>(
             isLoading: result.isLoading,
             item: {
               model: result.item.model,
-              id: result.item.id,
+              id: request.id,
               attributes: {
                 ...result.item.attributes,
                 ...attributeChanges,

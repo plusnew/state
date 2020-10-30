@@ -8,6 +8,7 @@ import type ComponentInstance from "@plusnew/core/src/instances/types/Component/
 import type { entitiesContainerTemplate } from "../../types";
 import type { branchActions, branchState } from "../branchFactory";
 import type { repositoryActions, repositoryState } from "../repositoryFactory";
+import idSerializer from "../../util/idSerializer";
 
 type interact<T extends entitiesContainerTemplate, U extends keyof T> = {
   commitAttributes: (attributes: Partial<T[U]["item"]["attributes"]>) => void;
@@ -74,7 +75,7 @@ export default <T extends entitiesContainerTemplate>(
             branchDispatch({
               type: "ATTRIBUTES_CHANGE",
               model: Props.getState().model,
-              id: id as T[U]["item"]["id"],
+              id: idSerializer(id as T[U]["item"]["id"]),
               payload: attributes,
             });
           }
@@ -89,7 +90,7 @@ export default <T extends entitiesContainerTemplate>(
           branchDispatch({
             type: "RELATIONSHIPS_CHANGE",
             model: Props.getState().model,
-            id: id as T[U]["item"]["id"],
+            id: idSerializer(id as T[U]["item"]["id"]),
             payload: relationships,
           });
         },

@@ -9,25 +9,23 @@ import type { entitiesContainerTemplate, entityEmpty } from "../../types";
 import { mapObject } from "../../util/forEach";
 import type { branchActions, branchState } from "../branchFactory";
 import type { repositoryActions, repositoryState } from "../repositoryFactory";
+import { fromEntries } from "util/fromEntries";
+import idSerializer from "util/idSerializer";
 
 type changes<T extends entitiesContainerTemplate> = {
   [U in keyof T]?: {
-    [key: string]: {
-      id: T[U]["item"]["id"];
-      model: U;
-      attributes: T[U]["item"]["attributes"];
-      relationships: T[U]["item"]["relationships"];
-      changedAttributes: T[U]["item"]["attributes"];
-      changedRelationships: T[U]["item"]["relationships"];
-    };
-  };
+    id: T[U]["item"]["id"];
+    model: U;
+    attributes: T[U]["item"]["attributes"];
+    relationships: T[U]["item"]["relationships"];
+    changedAttributes: T[U]["item"]["attributes"];
+    changedRelationships: T[U]["item"]["relationships"];
+  }[];
 };
 
 type merge<T extends entitiesContainerTemplate> = (
   changes: {
-    [U in keyof T]?: {
-      [key: string]: T[U]["item"];
-    };
+    [U in keyof T]?: T[U]["item"][];
   }
 ) => void;
 type mergeRenderprops<T extends entitiesContainerTemplate> = (value: {
@@ -88,7 +86,12 @@ export default <T extends entitiesContainerTemplate>(
         repositoryDispatch({
           type: "ITEMS_INSERT",
           payload: {
-            items: changes,
+            items: mapObject(changes, (changeNamespace) =>
+              fromEntries(changeNamespace as T[keyof T]["item"][], (item) => [
+                idSerializer(item.id),
+                item,
+              ])
+            ),
             invalidateInvolvedListCahes: true,
           },
         });
@@ -126,7 +129,7 @@ export default <T extends entitiesContainerTemplate>(
                           false
                         ) {
                           changes[change.model][change.id] = {
-                            id: change.id,
+                            id: original.id,
                             model: change.model,
                             attributes: {
                               ...original.attributes,
@@ -220,7 +223,9 @@ export default <T extends entitiesContainerTemplate>(
                     }
 
                     return ((props.children as any)[0] as mergeRenderprops<T>)({
-                      changes: changes,
+                      changes: mapObject(changes, (namespace) =>
+                        Object.values(namespace)
+                      ) as changes<T>,
                       merge,
                     });
                   }}
