@@ -139,7 +139,6 @@ export default <T extends entitiesContainerTemplate>(
         const repositoryState = repository.getState();
         const result = repositoryState.getItemCache(request);
         const requestId = idSerializer(request.id);
-        debugger;
 
         if (result.hasError) {
           return result;
