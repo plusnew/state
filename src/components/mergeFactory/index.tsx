@@ -7,10 +7,10 @@ import plusnew, {
 import type ComponentInstance from "@plusnew/core/src/instances/types/Component/Instance";
 import type { entitiesContainerTemplate, entityEmpty } from "../../types";
 import { mapObject } from "../../util/forEach";
+import { fromEntries } from "../../util/fromEntries";
+import idSerializer from "../../util/idSerializer";
 import type { branchActions, branchState } from "../branchFactory";
 import type { repositoryActions, repositoryState } from "../repositoryFactory";
-import { fromEntries } from "util/fromEntries";
-import idSerializer from "util/idSerializer";
 
 type changes<T extends entitiesContainerTemplate> = {
   [U in keyof T]?: {
