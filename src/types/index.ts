@@ -1,4 +1,8 @@
-export type idTemplate = string | number | { [key: string]: idTemplate };
+export type idTemplate =
+  | string
+  | number
+  | boolean
+  | { [key: string]: idTemplate };
 
 export type entityEmpty<entityName, id extends idTemplate> = {
   id: id;

@@ -5,6 +5,8 @@ export default function idSerializer(id: idTemplate): string {
     return `"${id}"`;
   } else if (typeof id === "number") {
     return `${id}`;
+  } else if (typeof id === "boolean") {
+    return `${id.toString()}`;
   } else if (typeof id === "object") {
     return `{${Object.keys(id)
       .sort()

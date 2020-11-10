@@ -502,8 +502,8 @@ describe("test item", () => {
                 model="blogPost"
                 id={
                   toggleState
-                    ? { foo: "foo1", bar: "bar1" }
-                    : { bar: "bar1", foo: "foo1" }
+                    ? { foo: "foo1", bar: "bar1", mep: true }
+                    : { bar: "bar1", foo: "foo1", mep: true }
                 }
               >
                 {(view) =>
