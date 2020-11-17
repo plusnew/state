@@ -526,9 +526,9 @@
     fastq "^1.6.0"
 
 "@plusnew/core@^1.4.0":
-  version "1.4.1"
-  resolved "https://registry.yarnpkg.com/@plusnew/core/-/core-1.4.1.tgz#e10c093cb3aeddb8d3ff2c36ccc2cb9eb882c1bd"
-  integrity sha512-IAObhqQ1cRZzuvupLwr+ZFze7FPo/wC5mCjhGODURhKp+ia+fqvBgQlnuI/jNgqCVL4wZ0/ZynnJlsbZYta/LA==
+  version "1.5.0"
+  resolved "https://registry.yarnpkg.com/@plusnew/core/-/core-1.5.0.tgz#09c18fa504cade66161a17f1096e705cf6c15587"
+  integrity sha512-psU6JVyQedHtI2CAA69BvyF3NQEfL1MVrcHFrQ6ZKC9+XbHqB3XuRwNZm/0mOnesey5nkABibM661w5p3Bw1eA==
 
 "@plusnew/driver-dom@1.1.2":
   version "1.1.2"
