@@ -51,16 +51,16 @@ export default component(
     >
       <Branch>
         <List model="blogPost" parameter={{ sort: 'asc' }}>{({isLoading, items: blogPosts}) =>
-          {blogPosts.map(blogPost =>
+          blogPosts.map(blogPost =>
             <Item model="blogPost" id={blogPost.id}>{(blogPostItemView) =>
-              {blogPostItemView.isLoading
+              blogPostItemView.isLoading
                 ? 'loading'
                 :
                   <>
                     {blogPostItemView.item.attributes.title}
                     <Item model="user" id={blogPostItemView.item.relationships.author.id}>{({isLoading, item: author, commitAttributes}) =>
                       <input
-                        value={author?.attributes.name}
+                        value={author?.attributes.name ?? ""}
                         onchange={(evt) => commitAttributes({'name': evt.currentTarget.value})}
                       />
                     }</Item>
@@ -70,9 +70,8 @@ export default component(
                       />
                     }</Merge>
                   </>
-              }
             }<Item>
-          )}
+          )
         }</List>
       </Branch>
     </Repository>
