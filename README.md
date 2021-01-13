@@ -58,17 +58,17 @@ export default component(
                 :
                   <>
                     {blogPostItemView.item.attributes.title}
-                    <Item model="user" id={blogPostItemView.item.relationships.author.id}>{({isLoading, item: author, changeAttributes}) =>
+                    <Item model="user" id={blogPostItemView.item.relationships.author.id}>{({isLoading, item: author, commitAttributes}) =>
                       <input
                         value={author?.attributes.name}
-                        onchange={(evt) => changeAttributes({'name': evt.currentTarget.value})}
+                        onchange={(evt) => commitAttributes({'name': evt.currentTarget.value})}
                       />
                     }</Item>
-                    <BranchActions>{({commit}) =>
+                    <Merge>{({ merge, changes }) =>
                       <button
-                        onclick={commit}
+                        onclick={() => merge(changes)}
                       />
-                    }</BranchActions>
+                    }</Merge>
                   </>
               }
             }<Item>
