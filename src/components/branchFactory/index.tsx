@@ -82,7 +82,7 @@ export type branchActions<T extends entitiesContainerTemplate> =
   | changeLog<T, keyof T>
   | resetChangelog<T>;
 
-type props<> = {
+type props = {
   children: ApplicationElement;
 };
 
