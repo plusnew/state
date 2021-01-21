@@ -1,12 +1,12 @@
 {
 	"name": "@plusnew/state",
-	"version": "0.11.4",
+	"version": "0.12.0",
 	"description": "library for doing complext statemanagement in plusnew",
 	"main": "src/index.tsx",
 	"module": "src/index.tsx",
 	"scripts": {
 		"prepublishOnly": "yarn run test --no-cache",
-		"test": "jest --coverage",
+		"test": "jest --coverage --no-cache",
 		"test:watch": "jest --watch"
 	},
 	"keywords": [

@@ -17,7 +17,7 @@ type blogPostType = {
     author: {
       model: "user";
       id: string;
-    };
+    } | null;
   };
 };
 
@@ -203,7 +203,7 @@ describe("test item", () => {
                 <span>item-loading</span>
               ) : (
                 <h1>
-                  <span>{view.item.relationships.author.id}</span>
+                  <span>{view.item.relationships.author?.id}</span>
                   <button
                     onclick={() =>
                       commitRelationships({
@@ -224,7 +224,7 @@ describe("test item", () => {
                 <span>item-loading</span>
               ) : (
                 <h2>
-                  <span>{view.item.relationships.author.id}</span>
+                  <span>{view.item.relationships.author?.id}</span>
                   <button
                     onclick={() =>
                       commitRelationships({
@@ -248,7 +248,7 @@ describe("test item", () => {
                 <span>item-loading</span>
               ) : (
                 <h3>
-                  <span>{view.item.relationships.author.id}</span>
+                  <span>{view.item.relationships.author?.id}</span>
                   <button
                     onclick={() =>
                       commitRelationships({
@@ -281,6 +281,93 @@ describe("test item", () => {
     expect(wrapper.find("h1").contains(<span>2</span>)).toBe(true);
     expect(wrapper.find("h2").contains(<span>1</span>)).toBe(true);
     expect(wrapper.find("h3").contains(<span>1</span>)).toBe(true);
+  });
+
+  it("commitRelationships, should be nullable", async () => {
+    const { Repository, Branch, Item } = stateFactory<{
+      blogPost: {
+        listParameter: {
+          sort: "asc" | "desc";
+        };
+        item: blogPostType;
+      };
+    }>();
+
+    const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
+      items: [
+        {
+          id: "1",
+          model: "blogPost" as const,
+        },
+        {
+          id: "2",
+          model: "blogPost" as const,
+        },
+      ],
+      totalCount: 5,
+    }));
+
+    const item = promiseHandler((id: string) => ({
+      id: id,
+      model: "blogPost" as const,
+      attributes: {
+        name: `foo-${id}`,
+        counter: 0,
+      },
+      relationships: {
+        author: {
+          model: "user" as const,
+          id: "1",
+        },
+      },
+    }));
+
+    const wrapper = mount(
+      <Repository
+        requests={{
+          blogPost: {
+            readList: list.fn,
+            readItem: item.fn,
+          },
+        }}
+      >
+        <Branch>
+          <Item model="blogPost" id={"1"}>
+            {(view, { commitRelationships }) =>
+              view.isLoading ? (
+                <span>item-loading</span>
+              ) : (
+                <h1>
+                  <span>
+                    {view.item.relationships.author === null
+                      ? "no-author"
+                      : view.item.relationships.author.id}
+                  </span>
+                  <button
+                    onclick={() =>
+                      commitRelationships({
+                        author: null,
+                      })
+                    }
+                  />
+                </h1>
+              )
+            }
+          </Item>
+        </Branch>
+      </Repository>
+    );
+
+    expect(wrapper.contains(<span>item-loading</span>)).toBe(true);
+
+    await item.resolve();
+
+    expect(wrapper.contains(<span>item-loading</span>)).toBe(false);
+    expect(wrapper.find("h1").contains(<span>1</span>)).toBe(true);
+
+    wrapper.find("h1").find("button").simulate("click");
+
+    expect(wrapper.find("h1").contains(<span>no-author</span>)).toBe(true);
   });
   it("commitAttributes should throw error when item is empty", async () => {
     const { Repository, Branch, Item } = stateFactory<{
