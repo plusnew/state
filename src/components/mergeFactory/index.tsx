@@ -40,7 +40,7 @@ type props<T extends entitiesContainerTemplate> = {
 type singleRelationship = entityEmpty<string, string | number>;
 type manyRelationships = entityEmpty<string, string | number>[];
 
-type relationships = singleRelationship | manyRelationships;
+type relationships = (singleRelationship | null) | manyRelationships;
 
 function isSameSingleRelationship(
   a: singleRelationship,
@@ -56,6 +56,10 @@ function isSameRelationship(a: relationships, b: relationships) {
       b.every((value, index) => isSameSingleRelationship(a[index], value))
     );
   } else if (Array.isArray(a) === false && Array.isArray(b) === false) {
+    if (a === null || b === null) {
+      return a === b;
+    }
+
     return isSameSingleRelationship(
       a as singleRelationship,
       b as singleRelationship

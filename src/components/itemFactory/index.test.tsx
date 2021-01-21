@@ -284,7 +284,7 @@ describe("test item", () => {
   });
 
   it("commitRelationships, should be nullable", async () => {
-    const { Repository, Branch, Item } = stateFactory<{
+    const { Repository, Branch, Item, Merge } = stateFactory<{
       blogPost: {
         listParameter: {
           sort: "asc" | "desc";
@@ -332,25 +332,50 @@ describe("test item", () => {
         }}
       >
         <Branch>
+          <Merge>
+            {({ merge, changes }) => (
+              <Item model="blogPost" id={"1"}>
+                {(view, { commitRelationships }) =>
+                  view.isLoading ? (
+                    <span>item-loading</span>
+                  ) : (
+                    <h1>
+                      <span>
+                        {view.item.relationships.author === null
+                          ? "no-author"
+                          : view.item.relationships.author.id}
+                      </span>
+                      <button
+                        onclick={() => {
+                          if (view.item.relationships.author === null) {
+                            merge(changes);
+                          } else {
+                            commitRelationships({
+                              author: null,
+                            });
+                          }
+                        }}
+                      />
+                    </h1>
+                  )
+                }
+              </Item>
+            )}
+          </Merge>
+        </Branch>
+        <Branch>
           <Item model="blogPost" id={"1"}>
-            {(view, { commitRelationships }) =>
+            {(view) =>
               view.isLoading ? (
                 <span>item-loading</span>
               ) : (
-                <h1>
+                <h2>
                   <span>
                     {view.item.relationships.author === null
                       ? "no-author"
                       : view.item.relationships.author.id}
                   </span>
-                  <button
-                    onclick={() =>
-                      commitRelationships({
-                        author: null,
-                      })
-                    }
-                  />
-                </h1>
+                </h2>
               )
             }
           </Item>
@@ -364,10 +389,17 @@ describe("test item", () => {
 
     expect(wrapper.contains(<span>item-loading</span>)).toBe(false);
     expect(wrapper.find("h1").contains(<span>1</span>)).toBe(true);
+    expect(wrapper.find("h2").contains(<span>1</span>)).toBe(true);
 
     wrapper.find("h1").find("button").simulate("click");
 
     expect(wrapper.find("h1").contains(<span>no-author</span>)).toBe(true);
+    expect(wrapper.find("h2").contains(<span>1</span>)).toBe(true);
+
+    wrapper.find("h1").find("button").simulate("click");
+
+    expect(wrapper.find("h1").contains(<span>no-author</span>)).toBe(true);
+    expect(wrapper.find("h2").contains(<span>no-author</span>)).toBe(true);
   });
   it("commitAttributes should throw error when item is empty", async () => {
     const { Repository, Branch, Item } = stateFactory<{
