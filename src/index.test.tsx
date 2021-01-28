@@ -301,4 +301,142 @@ describe("test statefactory", () => {
     expect(wrapper.contains(<span>bar-2</span>)).toBe(true);
     expect(item.fn).not.toHaveBeenCalled();
   });
+
+  it("Merge Deletions should remove entities of lists immidiatley, and invalidate their cache", async () => {
+    const { Repository, Branch, Item, List, Merge } = stateFactory<{
+      blogPost: {
+        listParameter: {
+          sort: "asc" | "desc";
+        };
+        item: blogPostType;
+      };
+    }>();
+
+    let listItems = [
+      {
+        id: "1",
+        model: "blogPost" as const,
+      },
+      {
+        id: "2",
+        model: "blogPost" as const,
+      },
+    ];
+
+    const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
+      items: listItems,
+      totalCount: listItems.length,
+    }));
+
+    const item = promiseHandler((id: string) => ({
+      id: id,
+      model: "blogPost" as const,
+      attributes: {
+        name: `foo-${id}`,
+      },
+      relationships: {},
+    }));
+
+    const wrapper = mount(
+      <Repository
+        requests={{
+          blogPost: {
+            readList: list.fn,
+            readItem: item.fn,
+          },
+        }}
+      >
+        <Branch>
+          <List model="blogPost" parameter={{ sort: "asc" }}>
+            {(listState) => (
+              <>
+                {listState.isLoading && <div>list-loading</div>}
+                <div>amount:{listState.items.length}</div>
+                {listState.items.map((item) => (
+                  <Item model="blogPost" id={item.id}>
+                    {(view) =>
+                      view.isLoading ? (
+                        <span>item-loading</span>
+                      ) : (
+                        <span>{view.item.attributes.name}</span>
+                      )
+                    }
+                  </Item>
+                ))}
+                <Merge>
+                  {({ merge }) => (
+                    <button
+                      onclick={() =>
+                        merge({
+                          blogPost: [
+                            {
+                              id: "1",
+                              isDeleted: true,
+                            },
+                          ],
+                        })
+                      }
+                    />
+                  )}
+                </Merge>
+              </>
+            )}
+          </List>
+        </Branch>
+      </Repository>
+    );
+
+    expect(wrapper.contains(<div>list-loading</div>)).toBe(true);
+    expect(wrapper.contains(<div>amount:0</div>)).toBe(true);
+    expect(wrapper.contains(<span>item-loading</span>)).toBe(false);
+
+    await list.resolve();
+
+    expect(wrapper.contains(<div>list-loading</div>)).toBe(false);
+    expect(wrapper.contains(<div>amount:2</div>)).toBe(true);
+    expect(wrapper.contains(<span>item-loading</span>)).toBe(true);
+
+    await item.resolve();
+
+    expect(wrapper.contains(<div>list-loading</div>)).toBe(false);
+    expect(wrapper.contains(<div>amount:2</div>)).toBe(true);
+    expect(wrapper.contains(<span>item-loading</span>)).toBe(false);
+    expect(wrapper.contains(<span>foo-1</span>)).toBe(true);
+    expect(wrapper.contains(<span>foo-2</span>)).toBe(true);
+
+    // Changing response of api
+    listItems = [
+      {
+        id: "3",
+        model: "blogPost" as const,
+      },
+    ];
+
+    wrapper.find("button").simulate("click");
+
+    // after deletion, cache invalidation is expected
+    expect(wrapper.contains(<div>list-loading</div>)).toBe(true);
+    expect(wrapper.contains(<div>amount:1</div>)).toBe(true);
+    expect(wrapper.contains(<span>item-loading</span>)).toBe(false);
+    expect(wrapper.contains(<span>foo-1</span>)).toBe(false);
+    expect(wrapper.contains(<span>foo-2</span>)).toBe(true);
+
+    await list.resolve();
+
+    expect(wrapper.contains(<div>list-loading</div>)).toBe(false);
+    expect(wrapper.contains(<div>amount:1</div>)).toBe(true);
+    expect(wrapper.contains(<span>item-loading</span>)).toBe(true);
+    expect(wrapper.contains(<span>foo-1</span>)).toBe(false);
+    expect(wrapper.contains(<span>foo-2</span>)).toBe(false);
+    expect(wrapper.contains(<span>foo-3</span>)).toBe(false);
+
+    await item.resolve();
+
+    expect(wrapper.contains(<div>list-loading</div>)).toBe(false);
+    expect(wrapper.contains(<div>amount:1</div>)).toBe(true);
+    expect(wrapper.contains(<span>item-loading</span>)).toBe(false);
+    expect(wrapper.contains(<span>foo-1</span>)).toBe(false);
+    expect(wrapper.contains(<span>foo-2</span>)).toBe(false);
+    expect(wrapper.contains(<span>foo-3</span>)).toBe(true);
+  });
 });

@@ -1,4 +1,4 @@
-import plusnew, { store } from "@plusnew/core";
+import plusnew, { store, Try } from "@plusnew/core";
 import enzymeAdapterPlusnew, { mount } from "@plusnew/enzyme-adapter";
 import { configure } from "enzyme";
 import stateFactory from "../../index";
@@ -650,5 +650,101 @@ describe("test item", () => {
     toggle.dispatch(false);
 
     expect(wrapper.find("h1").contains(<span>foo1</span>)).toBe(true);
+  });
+
+  it("Using a deleted Item should throw an error", async () => {
+    const { Repository, Branch, Item, Merge } = stateFactory<{
+      blogPost: {
+        listParameter: {
+          sort: "asc" | "desc";
+        };
+        item: blogPostType;
+      };
+    }>();
+
+    const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
+      items: [
+        {
+          id: "1",
+          model: "blogPost" as const,
+        },
+        {
+          id: "2",
+          model: "blogPost" as const,
+        },
+      ],
+      totalCount: 5,
+    }));
+
+    const item = promiseHandler((id: string) => ({
+      id: id,
+      model: "blogPost" as const,
+      attributes: {
+        name: `foo-${id}`,
+        counter: 0,
+      },
+      relationships: {
+        author: {
+          model: "user" as const,
+          id: "1",
+        },
+      },
+    }));
+
+    const wrapper = mount(
+      <Repository
+        requests={{
+          blogPost: {
+            readList: list.fn,
+            readItem: item.fn,
+          },
+        }}
+      >
+        <Branch>
+          <Try catch={(error) => <div>{(error as Error).message}</div>}>
+            {() => (
+              <Item model="blogPost" id={"1"}>
+                {(view) =>
+                  view.isLoading ? (
+                    <span>item-loading</span>
+                  ) : (
+                    <h1>
+                      <span>{view.item.attributes.counter}</span>
+                      <Merge>
+                        {({ merge }) => (
+                          <button
+                            onclick={() =>
+                              merge({
+                                blogPost: [
+                                  {
+                                    id: view.item.id,
+                                    isDeleted: true as const,
+                                  },
+                                ],
+                              })
+                            }
+                          />
+                        )}
+                      </Merge>
+                    </h1>
+                  )
+                }
+              </Item>
+            )}
+          </Try>
+        </Branch>
+      </Repository>
+    );
+
+    expect(wrapper.contains(<span>item-loading</span>)).toBe(true);
+
+    await item.resolve();
+
+    expect(wrapper.contains(<span>item-loading</span>)).toBe(false);
+    expect(wrapper.find("h1").contains(<span>{0}</span>)).toBe(true);
+
+    wrapper.find("h1").find("button").simulate("click");
+
+    expect(wrapper.contains(<div>The item was deleted</div>)).toBe(true);
   });
 });

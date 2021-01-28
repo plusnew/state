@@ -108,6 +108,7 @@ export default <T extends entitiesContainerTemplate>(
         if (result.hasError) {
           return result;
         }
+
         if (result.hasCache) {
           let isLoading = result.isLoading;
           if (result.hasInvalidCache === true && isLoading === false) {
@@ -118,7 +119,14 @@ export default <T extends entitiesContainerTemplate>(
           return {
             hasError: false,
             isLoading: isLoading,
-            items: result.items,
+            items: result.items.filter((item) => {
+              const itemCache = repositoryState.getItemCache({
+                model: item.model,
+                id: item.id,
+              });
+
+              return !itemCache.isDeleted;
+            }),
             totalCount: result.totalCount,
           };
         }
@@ -143,6 +151,14 @@ export default <T extends entitiesContainerTemplate>(
         if (result.hasError) {
           return result;
         }
+
+        if (result.isDeleted) {
+          return {
+            hasError: true,
+            error: new Error("The item was deleted"),
+          };
+        }
+
         if (result.hasCache) {
           let attributeChanges = {};
           let relationshipChanges = {};
@@ -231,10 +247,9 @@ export default <T extends entitiesContainerTemplate>(
                 getItem,
               };
             }
+            default:
+              throw new Error("No such action");
           }
-
-          /* istanbul ignore next */
-          throw new Error("No such action");
         }
       );
 

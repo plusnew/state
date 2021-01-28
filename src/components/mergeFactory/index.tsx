@@ -13,21 +13,45 @@ import type { branchActions, branchState } from "../branchFactory";
 import type { repositoryActions, repositoryState } from "../repositoryFactory";
 
 type changes<T extends entitiesContainerTemplate> = {
-  [U in keyof T]?: {
-    id: T[U]["item"]["id"];
-    model: U;
-    attributes: T[U]["item"]["attributes"];
-    relationships: T[U]["item"]["relationships"];
-    changedAttributes: T[U]["item"]["attributes"];
-    changedRelationships: T[U]["item"]["relationships"];
-  }[];
+  [U in keyof T]?: (
+    | {
+        id: T[U]["item"]["id"];
+        model: U;
+        isDeleted: true;
+      }
+    | {
+        id: T[U]["item"]["id"];
+        model: U;
+        isDeleted: false;
+        attributes: T[U]["item"]["attributes"];
+        relationships: T[U]["item"]["relationships"];
+        changedAttributes: T[U]["item"]["attributes"];
+        changedRelationships: T[U]["item"]["relationships"];
+      }
+  )[];
+};
+
+type appliedChanges<T extends entitiesContainerTemplate> = {
+  [U in keyof T]: (
+    | {
+        id: T[U]["item"]["id"];
+        model?: U;
+        isDeleted: true;
+      }
+    | {
+        id: T[U]["item"]["id"];
+        model?: U;
+        isDeleted?: false;
+        attributes: T[U]["item"]["attributes"];
+        relationships: T[U]["item"]["relationships"];
+      }
+  )[];
 };
 
 type merge<T extends entitiesContainerTemplate> = (
-  changes: {
-    [U in keyof T]?: T[U]["item"][];
-  }
+  changes: Partial<appliedChanges<T>>
 ) => void;
+
 type mergeRenderprops<T extends entitiesContainerTemplate> = (value: {
   changes: changes<T>;
   merge: merge<T>;
@@ -90,11 +114,18 @@ export default <T extends entitiesContainerTemplate>(
         repositoryDispatch({
           type: "ITEMS_INSERT",
           payload: {
-            items: mapObject(changes, (changeNamespace) =>
-              fromEntries(changeNamespace as T[keyof T]["item"][], (item) => [
-                idSerializer(item.id),
-                item,
-              ])
+            items: mapObject(
+              changes as appliedChanges<T>,
+              (changeNamespace, changeNamespaceName) =>
+                fromEntries(changeNamespace, (item) => [
+                  idSerializer(item.id),
+                  item.isDeleted
+                    ? { isDeleted: true }
+                    : {
+                        isDeleted: false,
+                        item: { model: changeNamespaceName as any, ...item },
+                      },
+                ])
             ),
             invalidateInvolvedListCahes: true,
           },

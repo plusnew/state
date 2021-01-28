@@ -59,6 +59,11 @@ type storeEntity<T extends entitiesContainerTemplate, U extends keyof T> =
   | {
       hasError: true;
       error: any;
+      isDeleted: false;
+    }
+  | {
+      hasError: false;
+      isDeleted: true;
     };
 
 type storeList = {
@@ -106,16 +111,22 @@ type syncReadItemRequest<
   request: itemRequestParameter<T, U>
 ) =>
   | {
+      isDeleted: true;
+      hasError: false;
+    }
+  | {
       hasError: true;
+      isDeleted: false;
       error: any;
     }
   | {
+      isDeleted: false;
       hasError: false;
       hasCache: true;
       isLoading: boolean;
       item: T[U]["item"];
     }
-  | { hasError: false; hasCache: false; isLoading: boolean };
+  | { hasError: false; hasCache: false; isDeleted: false; isLoading: boolean };
 
 export type repositoryState<T extends entitiesContainerTemplate> = {
   entities: {
@@ -137,7 +148,9 @@ type itemsInsertAction<T extends entitiesContainerTemplate> = {
   payload: {
     items: {
       [U in keyof T]?: {
-        [id: string]: T[U]["item"];
+        [id: string]:
+          | { isDeleted: false; item: T[U]["item"] }
+          | { isDeleted: true };
       };
     };
     invalidateInvolvedListCahes: boolean;
@@ -258,11 +271,20 @@ export default <T extends entitiesContainerTemplate>(
             return {
               hasError: true,
               error: result.error,
+              isDeleted: false,
+            };
+          }
+
+          if (result.isDeleted) {
+            return {
+              isDeleted: true,
+              hasError: false,
             };
           }
 
           return {
             hasError: false,
+            isDeleted: false,
             hasCache: true,
             isLoading,
             item: result.payload,
@@ -270,6 +292,7 @@ export default <T extends entitiesContainerTemplate>(
         }
         return {
           hasError: false,
+          isDeleted: false,
           hasCache: false,
           isLoading: isLoading,
         };
@@ -342,7 +365,7 @@ export default <T extends entitiesContainerTemplate>(
             payload: {
               items: {
                 [request.model]: {
-                  [requestId]: result,
+                  [requestId]: { isDeleted: false, item: result },
                 },
               },
               invalidateInvolvedListCahes: false,
@@ -446,10 +469,10 @@ export default <T extends entitiesContainerTemplate>(
                   ...previouState.entities[model],
                   ...mapObject(
                     items,
-                    (item) =>
+                    ({ item, isDeleted }) =>
                       ({
                         hasError: false,
-                        isDeleted: false,
+                        isDeleted: isDeleted,
                         hasInvalidCache: false,
                         payload: item,
                       } as const)
@@ -487,6 +510,7 @@ export default <T extends entitiesContainerTemplate>(
                     (error) =>
                       ({
                         hasError: true,
+                        isDeleted: false,
                         error: error,
                       } as const)
                   ),
