@@ -184,6 +184,107 @@ describe("test Merge", () => {
     expect(wrapper.find({ key: "submit" }).prop("disabled")).toBe(false);
   });
 
+  it("commitAttributes should add changes to Merge, and remove them if it is equal with repo", async () => {
+    const { Repository, Branch, Item, Merge } = stateFactory<{
+      blogPost: {
+        listParameter: {
+          sort: "asc" | "desc";
+        };
+        item: blogPostType;
+      };
+    }>();
+
+    const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
+      items: [
+        {
+          id: "1",
+          model: "blogPost" as const,
+        },
+        {
+          id: "2",
+          model: "blogPost" as const,
+        },
+      ],
+      totalCount: 5,
+    }));
+
+    const item = promiseHandler((id: string) => ({
+      id: id,
+      model: "blogPost" as const,
+      attributes: {
+        name: `foo-${id}`,
+        counter: 0,
+      },
+      relationships: {
+        author: {
+          model: "user" as const,
+          id: 1,
+        },
+      },
+    }));
+
+    const wrapper = mount(
+      <Repository
+        requests={{
+          blogPost: {
+            readList: list.fn,
+            readItem: item.fn,
+          },
+        }}
+      >
+        <Branch>
+          <Item model="blogPost" id={"1"}>
+            {(view, { commitAttributes }) =>
+              view.isLoading ? (
+                <span>item-loading</span>
+              ) : (
+                <h1>
+                  <span>{view.item.attributes.counter}</span>
+                  <button
+                    key="increment"
+                    onclick={() =>
+                      commitAttributes({
+                        counter: view.item.attributes.counter + 1,
+                      })
+                    }
+                  />
+                </h1>
+              )
+            }
+          </Item>
+
+          <Merge>
+            {({ changes }) => (
+              <span data-test-id="isDeleted">
+                {changes.blogPost?.map((change) => {
+                  if (change.isDeleted === true) {
+                    return "isDeleted";
+                  } else if (change.isDeleted === false) {
+                    return "notDeleted";
+                  }
+                  throw new Error("isDeleted needs to be either");
+                })}
+              </span>
+            )}
+          </Merge>
+        </Branch>
+      </Repository>
+    );
+
+    expect(wrapper.contains(<span>item-loading</span>)).toBe(true);
+
+    await item.resolve();
+
+    expect(wrapper.contains(<span>item-loading</span>)).toBe(false);
+    expect(wrapper.find("h1").contains(<span>{0}</span>)).toBe(true);
+
+    wrapper.find("h1").find({ key: "increment" }).simulate("click");
+
+    expect(wrapper.find({ "data-test-id": "isDeleted" }).text()).toBe(
+      "notDeleted"
+    );
+  });
+
   it("commitRelationships should add changes to Merge, and remove them if it is equal with repo, for multiple relationship", async () => {
     type blogPostType = {
       id: string;

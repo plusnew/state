@@ -166,6 +166,7 @@ export default <T extends entitiesContainerTemplate>(
                           changes[change.model][change.id] = {
                             id: original.id,
                             model: change.model,
+                            isDeleted: false, // Deletionhandling should be improved, as sonn as branches are capable of deleting
                             attributes: {
                               ...original.attributes,
                             },

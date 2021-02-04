@@ -50,7 +50,10 @@ type props<T extends entitiesContainerTemplate> = {
   };
 };
 
-type storeEntity<T extends entitiesContainerTemplate, U extends keyof T> =
+export type storeEntity<
+  T extends entitiesContainerTemplate,
+  U extends keyof T
+> =
   | {
       hasError: false;
       isDeleted: false;
