@@ -477,7 +477,28 @@ export default <T extends entitiesContainerTemplate>(
                         hasError: false,
                         isDeleted: isDeleted,
                         hasInvalidCache: false,
-                        payload: item,
+                        payload: isDeleted
+                          ? undefined
+                          : {
+                              id: item.id,
+                              model: item.model,
+                              attributes: item.attributes,
+                              relationships: mapObject(
+                                item.relationships,
+                                (relationhip) =>
+                                  Array.isArray(relationhip)
+                                    ? relationhip.map((relationshipEntity) => ({
+                                        id: relationshipEntity.id,
+                                        model: relationshipEntity.model,
+                                      }))
+                                    : relationhip === null
+                                    ? null
+                                    : {
+                                        id: relationhip.id,
+                                        model: relationhip.model,
+                                      }
+                              ),
+                            },
                       } as const)
                   ),
                 };
