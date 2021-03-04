@@ -201,8 +201,118 @@ function getQueryAsString(parameter: Record<string, unknown>) {
 
 export default <T extends entitiesContainerTemplate>(
   context: Context<repositoryState<T>, repositoryActions<T>>
-) =>
-  class Repository extends Component<props<T>> {
+) => {
+  function getEntities(
+    processingGroupedEnties: itemsInsertAction<T>["payload"]["items"],
+    groupedEntities: repositoryState<T>["entities"]
+  ) {
+    Object.entries(processingGroupedEnties).forEach(
+      ([model, processingEntities]: [
+        keyof T,
+        {
+          [index: string]:
+            | { isDeleted: false; item: T[keyof T]["item"] }
+            | { isDeleted: true };
+        }
+      ]) => {
+        if (model in groupedEntities) {
+          // Breaking reference
+          groupedEntities[model] = { ...groupedEntities[model] };
+        } else {
+          groupedEntities[model] = {};
+        }
+
+        return Object.entries(processingEntities).forEach(
+          ([id, processingEntity]) => {
+            (groupedEntities as any)[model][id] = {
+              hasError: false,
+              isDeleted: processingEntity.isDeleted,
+              hasInvalidCache: false,
+              payload: processingEntity.isDeleted
+                ? undefined
+                : {
+                    id: processingEntity.item.id,
+                    model: processingEntity.item.model,
+                    attributes: processingEntity.item.attributes,
+                    relationships: mapObject(
+                      processingEntity.item.relationships,
+                      (relationhip) => {
+                        let result;
+                        const newGroupedEntities: any = {};
+
+                        if (Array.isArray(relationhip)) {
+                          result = relationhip.map((relationshipEntity) => {
+                            if ("attributes" in relationshipEntity) {
+                              if (
+                                relationshipEntity.model in
+                                  newGroupedEntities ===
+                                false
+                              ) {
+                                newGroupedEntities[
+                                  relationshipEntity.model
+                                ] = {};
+                              }
+
+                              (newGroupedEntities as any)[
+                                relationshipEntity.model
+                              ][idSerializer(relationshipEntity.id)] = {
+                                isDeleted: false,
+                                item: {
+                                  id: relationshipEntity.id,
+                                  model: relationshipEntity.model,
+                                  attributes: relationshipEntity.attributes,
+                                  relationships:
+                                    relationshipEntity.relationships,
+                                },
+                              };
+                            }
+
+                            return {
+                              id: relationshipEntity.id,
+                              model: relationshipEntity.model,
+                            };
+                          });
+                        } else if (relationhip === null) {
+                          result = null;
+                        } else {
+                          if ("attributes" in relationhip) {
+                            if (
+                              relationhip.model in newGroupedEntities ===
+                              false
+                            ) {
+                              newGroupedEntities[relationhip.model] = {};
+                            }
+                            newGroupedEntities[relationhip.model][
+                              idSerializer(relationhip.id)
+                            ] = {
+                              isDeleted: false,
+                              item: {
+                                id: relationhip.id as any,
+                                model: relationhip.model,
+                                attributes: relationhip.attributes,
+                                relationships: relationhip.relationships,
+                              },
+                            } as any;
+                          }
+
+                          result = {
+                            id: relationhip.id,
+                            model: relationhip.model,
+                          };
+                        }
+
+                        getEntities(newGroupedEntities, groupedEntities);
+                        return result;
+                      }
+                    ),
+                  },
+            } as const;
+          }
+        );
+      }
+    );
+  }
+  return class Repository extends Component<props<T>> {
     static displayName = __dirname;
     render(Props: Props<props<T>>) {
       let loadingLists: [keyof T, string][] = [];
@@ -467,42 +577,8 @@ export default <T extends entitiesContainerTemplate>(
 
             case "ITEMS_INSERT": {
               const newEntities = { ...previouState.entities };
-              Object.entries(action.payload.items).forEach(([model, items]) => {
-                newEntities[model as keyof T] = {
-                  ...previouState.entities[model],
-                  ...mapObject(
-                    items,
-                    ({ item, isDeleted }) =>
-                      ({
-                        hasError: false,
-                        isDeleted: isDeleted,
-                        hasInvalidCache: false,
-                        payload: isDeleted
-                          ? undefined
-                          : {
-                              id: item.id,
-                              model: item.model,
-                              attributes: item.attributes,
-                              relationships: mapObject(
-                                item.relationships,
-                                (relationhip) =>
-                                  Array.isArray(relationhip)
-                                    ? relationhip.map((relationshipEntity) => ({
-                                        id: relationshipEntity.id,
-                                        model: relationshipEntity.model,
-                                      }))
-                                    : relationhip === null
-                                    ? null
-                                    : {
-                                        id: relationhip.id,
-                                        model: relationhip.model,
-                                      }
-                              ),
-                            },
-                      } as const)
-                  ),
-                };
-              });
+              getEntities(action.payload.items, newEntities); // This function mutates through reference the newEntities
+
               return {
                 lists: action.payload.invalidateInvolvedListCahes
                   ? mapObject(
@@ -567,3 +643,4 @@ export default <T extends entitiesContainerTemplate>(
       );
     }
   };
+};

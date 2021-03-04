@@ -747,4 +747,226 @@ describe("test item", () => {
 
     expect(wrapper.contains(<div>The item was deleted</div>)).toBe(true);
   });
+
+  it("Sideload relationships should cause caching", async () => {
+    const { Repository, Branch, Item } = stateFactory<{
+      blogPost: {
+        listParameter: {
+          sort: "asc" | "desc";
+        };
+        item: blogPostType;
+      };
+      user: {
+        listParameter: never;
+        item: {
+          id: string;
+          model: "user";
+          attributes: { username: string };
+          relationships: {};
+        };
+      };
+    }>();
+
+    const blogList = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
+      items: [
+        {
+          id: "1",
+          model: "blogPost" as const,
+        },
+        {
+          id: "2",
+          model: "blogPost" as const,
+        },
+      ],
+      totalCount: 5,
+    }));
+
+    const blogItem = promiseHandler((id: string) => ({
+      id: id,
+      model: "blogPost" as const,
+      attributes: {
+        name: `foo-${id}`,
+        counter: 0,
+      },
+      relationships: {
+        author: {
+          model: "user" as const,
+          id: "2",
+          attributes: {
+            username: "user-foo",
+          },
+          relationships: {},
+        },
+      },
+    }));
+
+    const userListSpy = jasmine.createSpy("userListSpy", () =>
+      Promise.reject("List not implemented")
+    );
+    const userItemSpy = jasmine.createSpy("userItemSpy", () =>
+      Promise.reject("Item not implemented")
+    );
+
+    const wrapper = mount(
+      <Try catch={() => "everything went real bad"}>
+        {() => (
+          <Repository
+            requests={{
+              blogPost: {
+                readList: blogList.fn,
+                readItem: blogItem.fn,
+              },
+              user: {
+                readItem: userItemSpy,
+                readList: userListSpy,
+              },
+            }}
+          >
+            <Branch>
+              <Item model="blogPost" id={"1"}>
+                {(blogView) =>
+                  blogView.item && (
+                    <Item
+                      model="user"
+                      id={blogView.item.relationships.author?.id ?? null}
+                    >
+                      {(userView) => (
+                        <div>{userView.item?.attributes.username}</div>
+                      )}
+                    </Item>
+                  )
+                }
+              </Item>
+            </Branch>
+          </Repository>
+        )}
+      </Try>
+    );
+
+    await blogItem.resolve();
+
+    expect(wrapper.contains(<div>user-foo</div>)).toBe(true);
+  });
+
+  it("Sideload relationships array should cause caching", async () => {
+    const { Repository, Branch, Item } = stateFactory<{
+      blogPost: {
+        listParameter: {
+          sort: "asc" | "desc";
+        };
+        item: {
+          id: string;
+          model: "blogPost";
+          attributes: {
+            name: string;
+            counter: number;
+          };
+          relationships: {
+            authors: {
+              model: "user";
+              id: string;
+            }[];
+          };
+        };
+      };
+      user: {
+        listParameter: never;
+        item: {
+          id: string;
+          model: "user";
+          attributes: { username: string };
+          relationships: {};
+        };
+      };
+    }>();
+
+    const blogList = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
+      items: [
+        {
+          id: "1",
+          model: "blogPost" as const,
+        },
+        {
+          id: "2",
+          model: "blogPost" as const,
+        },
+      ],
+      totalCount: 5,
+    }));
+
+    const blogItem = promiseHandler((id: string) => ({
+      id: id,
+      model: "blogPost" as const,
+      attributes: {
+        name: `foo-${id}`,
+        counter: 0,
+      },
+      relationships: {
+        authors: [
+          {
+            model: "user" as const,
+            id: "2",
+            attributes: {
+              username: "user-foo",
+            },
+            relationships: {},
+          },
+          {
+            model: "user" as const,
+            id: "3",
+            attributes: {
+              username: "user-bar",
+            },
+            relationships: {},
+          },
+        ],
+      },
+    }));
+
+    const userListSpy = jasmine.createSpy("userListSpy", () =>
+      Promise.reject("List not implemented")
+    );
+    const userItemSpy = jasmine.createSpy("userItemSpy", () =>
+      Promise.reject("Item not implemented")
+    );
+
+    const wrapper = mount(
+      <Try catch={() => "everything went real bad"}>
+        {() => (
+          <Repository
+            requests={{
+              blogPost: {
+                readList: blogList.fn,
+                readItem: blogItem.fn,
+              },
+              user: {
+                readItem: userItemSpy,
+                readList: userListSpy,
+              },
+            }}
+          >
+            <Branch>
+              <Item model="blogPost" id={"1"}>
+                {(blogView) =>
+                  blogView.item &&
+                  blogView.item.relationships.authors.map((author) => (
+                    <Item model="user" id={author.id}>
+                      {(userView) => (
+                        <div>{userView.item?.attributes.username}</div>
+                      )}
+                    </Item>
+                  ))
+                }
+              </Item>
+            </Branch>
+          </Repository>
+        )}
+      </Try>
+    );
+
+    await blogItem.resolve();
+
+    expect(wrapper.contains(<div>user-foo</div>)).toBe(true);
+    expect(wrapper.contains(<div>user-bar</div>)).toBe(true);
+  });
 });

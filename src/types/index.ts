@@ -17,8 +17,12 @@ export type entityTemplate<entityName> = {
     attributes: Record<string, unknown>;
     relationships: {
       [key: string]:
-        | (entityEmpty<entityName, idTemplate> | null)
-        | entityEmpty<entityName, idTemplate>[];
+        | (
+            | entityEmpty<entityName, idTemplate>
+            | entityTemplate<any>["item"]
+            | null
+          )
+        | (entityTemplate<any>["item"] | entityEmpty<entityName, idTemplate>)[];
     };
   };
 };
