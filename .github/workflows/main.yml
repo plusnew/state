@@ -28,5 +28,8 @@ jobs:
       - name: Install Dependencies
         run: yarn install
 
+      - name: debug
+        run: ls
+        
       - name: Test
         run: yarn run test
