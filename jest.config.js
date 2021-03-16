@@ -9,7 +9,6 @@ module.exports = {
   transformIgnorePatterns: [],
   moduleFileExtensions: ["tsx", "ts", "js"],
   setupFiles: [],
-  coverageProvider: "v8",
   coverageReporters: ["lcov", "text"],
   coverageDirectory: "coverage",
   coverageThreshold: {
