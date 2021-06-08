@@ -86,9 +86,7 @@ type storeList = {
 type syncReadListRequest<
   T extends entitiesContainerTemplate,
   U extends keyof T
-> = (
-  request: listRequestParameter<T, U>
-) =>
+> = (request: listRequestParameter<T, U>) =>
   | {
       hasError: true;
       error: any;
@@ -110,9 +108,7 @@ type syncReadListRequest<
 type syncReadItemRequest<
   T extends entitiesContainerTemplate,
   U extends keyof T
-> = (
-  request: itemRequestParameter<T, U>
-) =>
+> = (request: itemRequestParameter<T, U>) =>
   | {
       isDeleted: true;
       hasError: false;
@@ -169,18 +165,16 @@ type itemsInsertErrorAction<T extends entitiesContainerTemplate> = {
   };
 };
 
-type listInsertAction<
-  T extends entitiesContainerTemplate,
-  U extends keyof T
-> = {
-  type: "LIST_INSERT";
-  model: U;
-  query: string;
-  payload: {
-    items: T[U]["item"][] | entityEmpty<U, T[U]["item"]["id"]>[];
-    totalCount: number;
+type listInsertAction<T extends entitiesContainerTemplate, U extends keyof T> =
+  {
+    type: "LIST_INSERT";
+    model: U;
+    query: string;
+    payload: {
+      items: T[U]["item"][] | entityEmpty<U, T[U]["item"]["id"]>[];
+      totalCount: number;
+    };
   };
-};
 
 type listErrorAction<T extends entitiesContainerTemplate, U extends keyof T> = {
   type: "LIST_ERROR";
@@ -248,9 +242,8 @@ export default <T extends entitiesContainerTemplate>(
                                   newGroupedEntities ===
                                 false
                               ) {
-                                newGroupedEntities[
-                                  relationshipEntity.model
-                                ] = {};
+                                newGroupedEntities[relationshipEntity.model] =
+                                  {};
                               }
 
                               (newGroupedEntities as any)[
@@ -318,6 +311,40 @@ export default <T extends entitiesContainerTemplate>(
       let loadingLists: [keyof T, string][] = [];
       let loadingItems: [keyof T, number | string][] = [];
 
+      class Debouncer {
+        constructor() {
+          requestAnimationFrame(() => {
+            debouncer = new Debouncer();
+
+            if (Object.keys(this.insertedItems).length > 0) {
+              repository.dispatch({
+                type: "ITEMS_INSERT",
+                payload: {
+                  items: this.insertedItems,
+                  invalidateInvolvedListCahes: false,
+                },
+              } as itemsInsertAction<T>);
+            }
+          });
+        }
+
+        insertedItems: itemsInsertAction<T>["payload"]["items"] = {};
+
+        add(item: T[keyof T]["item"]) {
+          if (item.model in this.insertedItems === false) {
+            (this.insertedItems as any)[item.model] = {};
+          }
+          const requestId = idSerializer(item.id);
+
+          (this.insertedItems[item.model] as any)[requestId] = {
+            isDeleted: false,
+            item,
+          };
+        }
+      }
+
+      let debouncer = new Debouncer();
+
       // Returns ids, in case cache is present
       const getListCache: syncReadListRequest<T, keyof T> = (request) => {
         const queryString = getQueryAsString(request.parameter);
@@ -376,9 +403,9 @@ export default <T extends entitiesContainerTemplate>(
           repositoryState.entities[request.model] !== undefined &&
           requestId in repositoryState.entities[request.model]
         ) {
-          const result: storeEntity<T, keyof T> = (repositoryState.entities[
-            request.model
-          ] as any)[requestId];
+          const result: storeEntity<T, keyof T> = (
+            repositoryState.entities[request.model] as any
+          )[requestId];
 
           if (result.hasError) {
             return {
@@ -473,17 +500,7 @@ export default <T extends entitiesContainerTemplate>(
         );
 
         if (result) {
-          repository.dispatch({
-            type: "ITEMS_INSERT",
-            payload: {
-              items: {
-                [request.model]: {
-                  [requestId]: { isDeleted: false, item: result },
-                },
-              },
-              invalidateInvolvedListCahes: false,
-            },
-          } as itemsInsertAction<T>);
+          debouncer.add(result);
         } else {
           repository.dispatch({
             type: "ITEMS_INSERT_ERROR",
@@ -543,10 +560,12 @@ export default <T extends entitiesContainerTemplate>(
                   [action.model]: {
                     ...previouState.lists[action.model],
                     [action.query]: {
-                      ids: (action.payload.items as entityEmpty<
-                        keyof T,
-                        idTemplate
-                      >[]).map((item) => item.id),
+                      ids: (
+                        action.payload.items as entityEmpty<
+                          keyof T,
+                          idTemplate
+                        >[]
+                      ).map((item) => item.id),
                       totalCount: action.payload.totalCount,
                       hasError: false,
                     },

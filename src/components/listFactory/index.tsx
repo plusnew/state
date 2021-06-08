@@ -8,15 +8,13 @@ import type { entitiesContainerTemplate, entityEmpty } from "../../types";
 import type { branchState, branchActions } from "../branchFactory";
 import type { repositoryState, repositoryActions } from "../repositoryFactory";
 
-type listRenderProps<
-  T extends entitiesContainerTemplate,
-  U extends keyof T
-> = (value: {
-  isLoading: boolean;
-  items: entityEmpty<U, T[U]["item"]["id"]>[];
-  totalCount: number;
-  isEmpty: boolean;
-}) => ApplicationElement;
+type listRenderProps<T extends entitiesContainerTemplate, U extends keyof T> =
+  (value: {
+    isLoading: boolean;
+    items: entityEmpty<U, T[U]["item"]["id"]>[];
+    totalCount: number;
+    isEmpty: boolean;
+  }) => ApplicationElement;
 
 type props<T extends entitiesContainerTemplate, U extends keyof T> = {
   model: U;
@@ -39,10 +37,12 @@ export default <T extends entitiesContainerTemplate>(
                 <Props>
                   {(props) => {
                     if (props.parameter === null) {
-                      return ((props.children as any)[0] as listRenderProps<
-                        T,
-                        keyof T
-                      >)({
+                      return (
+                        (props.children as any)[0] as listRenderProps<
+                          T,
+                          keyof T
+                        >
+                      )({
                         isEmpty: true,
                         items: [],
                         totalCount: 0,
@@ -58,10 +58,9 @@ export default <T extends entitiesContainerTemplate>(
                       throw view.error;
                     }
 
-                    return ((props.children as any)[0] as listRenderProps<
-                      T,
-                      keyof T
-                    >)({
+                    return (
+                      (props.children as any)[0] as listRenderProps<T, keyof T>
+                    )({
                       isEmpty: false,
                       ...view,
                     });

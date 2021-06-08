@@ -17,12 +17,10 @@ type interact<T extends entitiesContainerTemplate, U extends keyof T> = {
   ) => void;
 };
 
-type filledRenderProps<
-  T extends entitiesContainerTemplate,
-  U extends keyof T
-> =
-  | { isLoading: false; item: T[U]["item"]; isEmpty: false }
-  | { isLoading: true; item: T[U]["item"] | null; isEmpty: false };
+type filledRenderProps<T extends entitiesContainerTemplate, U extends keyof T> =
+
+    | { isLoading: false; item: T[U]["item"]; isEmpty: false }
+    | { isLoading: true; item: T[U]["item"] | null; isEmpty: false };
 
 type itemRenderProps<
   T extends entitiesContainerTemplate,
@@ -61,9 +59,8 @@ export default <T extends entitiesContainerTemplate>(
       Props: Props<props<T, U, Id>>,
       componentInstance: ComponentInstance<any, any, any>
     ) {
-      const { dispatch: branchDispatch } = branchContext.findProvider(
-        componentInstance
-      );
+      const { dispatch: branchDispatch } =
+        branchContext.findProvider(componentInstance);
 
       const interact: interact<T, U> = {
         commitAttributes: (attributes) => {
@@ -104,11 +101,9 @@ export default <T extends entitiesContainerTemplate>(
                 <Props>
                   {(props) => {
                     if (props.id === null) {
-                      return ((props.children as any)[0] as itemRenderProps<
-                        T,
-                        U,
-                        Id
-                      >)(
+                      return (
+                        (props.children as any)[0] as itemRenderProps<T, U, Id>
+                      )(
                         { isLoading: false, isEmpty: true, item: null } as any,
                         interact
                       );
@@ -122,11 +117,9 @@ export default <T extends entitiesContainerTemplate>(
                         throw view.error;
                       }
 
-                      return ((props.children as any)[0] as itemRenderProps<
-                        T,
-                        U,
-                        Id
-                      >)({ isEmpty: false, ...view } as any, interact);
+                      return (
+                        (props.children as any)[0] as itemRenderProps<T, U, Id>
+                      )({ isEmpty: false, ...view } as any, interact);
                     }
                   }}
                 </Props>

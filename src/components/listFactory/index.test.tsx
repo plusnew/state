@@ -23,14 +23,15 @@ type blogPostType = {
 
 describe("test list", () => {
   it("list with null-parameter, should not request data", async () => {
-    const { Repository, Branch, List } = stateFactory<{
-      blogPost: {
-        listParameter: {
-          sort: "asc" | "desc";
+    const { Repository, Branch, List } =
+      stateFactory<{
+        blogPost: {
+          listParameter: {
+            sort: "asc" | "desc";
+          };
+          item: blogPostType;
         };
-        item: blogPostType;
-      };
-    }>();
+      }>();
 
     const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
       items: [

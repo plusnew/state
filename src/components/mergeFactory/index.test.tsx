@@ -2,7 +2,7 @@ import plusnew from "@plusnew/core";
 import enzymeAdapterPlusnew, { mount } from "@plusnew/enzyme-adapter";
 import { configure } from "enzyme";
 import stateFactory from "../../index";
-import { promiseHandler } from "testHelper";
+import { promiseHandler, registerRequestIdleCallback } from "testHelper";
 
 configure({ adapter: new enzymeAdapterPlusnew() });
 
@@ -23,14 +23,17 @@ type blogPostType = {
 
 describe("test Merge", () => {
   it("commitAttributes should add changes to Merge, and remove them if it is equal with repo", async () => {
-    const { Repository, Branch, Item, Merge } = stateFactory<{
-      blogPost: {
-        listParameter: {
-          sort: "asc" | "desc";
+    const callIdleCallbacks = registerRequestIdleCallback();
+
+    const { Repository, Branch, Item, Merge } =
+      stateFactory<{
+        blogPost: {
+          listParameter: {
+            sort: "asc" | "desc";
+          };
+          item: blogPostType;
         };
-        item: blogPostType;
-      };
-    }>();
+      }>();
 
     const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
       items: [
@@ -147,6 +150,7 @@ describe("test Merge", () => {
     expect(wrapper.contains(<span>item-loading</span>)).toBe(true);
 
     await item.resolve();
+    callIdleCallbacks();
 
     expect(wrapper.contains(<span>item-loading</span>)).toBe(false);
     expect(wrapper.find("h1").contains(<span>{0}</span>)).toBe(true);
@@ -185,14 +189,17 @@ describe("test Merge", () => {
   });
 
   it("commitAttributes should add changes to Merge, and remove them if it is equal with repo", async () => {
-    const { Repository, Branch, Item, Merge } = stateFactory<{
-      blogPost: {
-        listParameter: {
-          sort: "asc" | "desc";
+    const callIdleCallbacks = registerRequestIdleCallback();
+
+    const { Repository, Branch, Item, Merge } =
+      stateFactory<{
+        blogPost: {
+          listParameter: {
+            sort: "asc" | "desc";
+          };
+          item: blogPostType;
         };
-        item: blogPostType;
-      };
-    }>();
+      }>();
 
     const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
       items: [
@@ -274,6 +281,7 @@ describe("test Merge", () => {
     expect(wrapper.contains(<span>item-loading</span>)).toBe(true);
 
     await item.resolve();
+    callIdleCallbacks();
 
     expect(wrapper.contains(<span>item-loading</span>)).toBe(false);
     expect(wrapper.find("h1").contains(<span>{0}</span>)).toBe(true);
@@ -286,6 +294,8 @@ describe("test Merge", () => {
   });
 
   it("commitRelationships should add changes to Merge, and remove them if it is equal with repo, for multiple relationship", async () => {
+    const callIdleCallbacks = registerRequestIdleCallback();
+
     type blogPostType = {
       id: string;
       model: "blogPost";
@@ -301,14 +311,15 @@ describe("test Merge", () => {
       };
     };
 
-    const { Repository, Branch, Item, Merge } = stateFactory<{
-      blogPost: {
-        listParameter: {
-          sort: "asc" | "desc";
+    const { Repository, Branch, Item, Merge } =
+      stateFactory<{
+        blogPost: {
+          listParameter: {
+            sort: "asc" | "desc";
+          };
+          item: blogPostType;
         };
-        item: blogPostType;
-      };
-    }>();
+      }>();
 
     const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
       items: [
@@ -439,6 +450,7 @@ describe("test Merge", () => {
     expect(wrapper.contains(<span>item-loading</span>)).toBe(true);
 
     await item.resolve();
+    callIdleCallbacks();
 
     expect(wrapper.contains(<span>item-loading</span>)).toBe(false);
     expect(wrapper.find("h1").contains(<span>{1}</span>)).toBe(true);
@@ -477,6 +489,8 @@ describe("test Merge", () => {
   });
 
   it("commitRelationships should add changes to Merge, and remove them if it is equal with repo, for multiple relationship, with different quantity", async () => {
+    const callIdleCallbacks = registerRequestIdleCallback();
+
     type blogPostType = {
       id: string;
       model: "blogPost";
@@ -492,14 +506,15 @@ describe("test Merge", () => {
       };
     };
 
-    const { Repository, Branch, Item, Merge } = stateFactory<{
-      blogPost: {
-        listParameter: {
-          sort: "asc" | "desc";
+    const { Repository, Branch, Item, Merge } =
+      stateFactory<{
+        blogPost: {
+          listParameter: {
+            sort: "asc" | "desc";
+          };
+          item: blogPostType;
         };
-        item: blogPostType;
-      };
-    }>();
+      }>();
 
     const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
       items: [
@@ -633,6 +648,8 @@ describe("test Merge", () => {
     expect(wrapper.contains(<span>item-loading</span>)).toBe(true);
 
     await item.resolve();
+    callIdleCallbacks();
+
     expect(wrapper.find("h1").contains(<span>{0}</span>)).toBe(true);
     expect(wrapper.find("h2").contains(<span>{0}</span>)).toBe(true);
     expect(wrapper.find("h3").contains(<span>{0}</span>)).toBe(true);
@@ -669,14 +686,17 @@ describe("test Merge", () => {
   });
 
   it("commitRelationships should add changes to Merge, and remove them if it is equal with repo, for single relationships", async () => {
-    const { Repository, Branch, Item, Merge } = stateFactory<{
-      blogPost: {
-        listParameter: {
-          sort: "asc" | "desc";
+    const callIdleCallbacks = registerRequestIdleCallback();
+
+    const { Repository, Branch, Item, Merge } =
+      stateFactory<{
+        blogPost: {
+          listParameter: {
+            sort: "asc" | "desc";
+          };
+          item: blogPostType;
         };
-        item: blogPostType;
-      };
-    }>();
+      }>();
 
     const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
       items: [
@@ -802,6 +822,7 @@ describe("test Merge", () => {
     expect(wrapper.contains(<span>item-loading</span>)).toBe(true);
 
     await item.resolve();
+    callIdleCallbacks();
 
     expect(wrapper.contains(<span>item-loading</span>)).toBe(false);
     expect(wrapper.find("h1").contains(<span>{0}</span>)).toBe(true);
@@ -840,14 +861,17 @@ describe("test Merge", () => {
   });
 
   it("merge invalidates list cache", async () => {
-    const { Repository, Branch, Item, List, Merge } = stateFactory<{
-      blogPost: {
-        listParameter: {
-          sort: "asc" | "desc";
+    const callIdleCallbacks = registerRequestIdleCallback();
+
+    const { Repository, Branch, Item, List, Merge } =
+      stateFactory<{
+        blogPost: {
+          listParameter: {
+            sort: "asc" | "desc";
+          };
+          item: blogPostType;
         };
-        item: blogPostType;
-      };
-    }>();
+      }>();
 
     const items = [
       {
@@ -952,6 +976,7 @@ describe("test Merge", () => {
     expect(wrapper.contains(<span>item-loading</span>)).toBe(true);
 
     await item.resolve();
+    callIdleCallbacks();
 
     expect(wrapper.contains(<div>list-loading</div>)).toBe(false);
     expect(wrapper.contains(<span>item-loading</span>)).toBe(false);

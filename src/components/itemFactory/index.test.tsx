@@ -2,7 +2,7 @@ import plusnew, { store, Try } from "@plusnew/core";
 import enzymeAdapterPlusnew, { mount } from "@plusnew/enzyme-adapter";
 import { configure } from "enzyme";
 import stateFactory from "../../index";
-import { promiseHandler } from "testHelper";
+import { promiseHandler, registerRequestIdleCallback } from "testHelper";
 
 configure({ adapter: new enzymeAdapterPlusnew() });
 
@@ -23,14 +23,17 @@ type blogPostType = {
 
 describe("test item", () => {
   it("commitAttributeChange, should not affect other branches", async () => {
-    const { Repository, Branch, Item } = stateFactory<{
-      blogPost: {
-        listParameter: {
-          sort: "asc" | "desc";
+    const callIdleCallbacks = registerRequestIdleCallback();
+
+    const { Repository, Branch, Item } =
+      stateFactory<{
+        blogPost: {
+          listParameter: {
+            sort: "asc" | "desc";
+          };
+          item: blogPostType;
         };
-        item: blogPostType;
-      };
-    }>();
+      }>();
 
     const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
       items: [
@@ -135,6 +138,7 @@ describe("test item", () => {
     expect(wrapper.contains(<span>item-loading</span>)).toBe(true);
 
     await item.resolve();
+    callIdleCallbacks();
 
     expect(wrapper.contains(<span>item-loading</span>)).toBe(false);
     expect(wrapper.find("h1").contains(<span>{0}</span>)).toBe(true);
@@ -149,14 +153,17 @@ describe("test item", () => {
   });
 
   it("commitRelationships, should not affect other branches", async () => {
-    const { Repository, Branch, Item } = stateFactory<{
-      blogPost: {
-        listParameter: {
-          sort: "asc" | "desc";
+    const callIdleCallbacks = registerRequestIdleCallback();
+
+    const { Repository, Branch, Item } =
+      stateFactory<{
+        blogPost: {
+          listParameter: {
+            sort: "asc" | "desc";
+          };
+          item: blogPostType;
         };
-        item: blogPostType;
-      };
-    }>();
+      }>();
 
     const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
       items: [
@@ -270,6 +277,7 @@ describe("test item", () => {
     expect(wrapper.contains(<span>item-loading</span>)).toBe(true);
 
     await item.resolve();
+    callIdleCallbacks();
 
     expect(wrapper.contains(<span>item-loading</span>)).toBe(false);
     expect(wrapper.find("h1").contains(<span>1</span>)).toBe(true);
@@ -284,14 +292,17 @@ describe("test item", () => {
   });
 
   it("commitRelationships, should be nullable", async () => {
-    const { Repository, Branch, Item, Merge } = stateFactory<{
-      blogPost: {
-        listParameter: {
-          sort: "asc" | "desc";
+    const callIdleCallbacks = registerRequestIdleCallback();
+
+    const { Repository, Branch, Item, Merge } =
+      stateFactory<{
+        blogPost: {
+          listParameter: {
+            sort: "asc" | "desc";
+          };
+          item: blogPostType;
         };
-        item: blogPostType;
-      };
-    }>();
+      }>();
 
     const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
       items: [
@@ -386,6 +397,7 @@ describe("test item", () => {
     expect(wrapper.contains(<span>item-loading</span>)).toBe(true);
 
     await item.resolve();
+    callIdleCallbacks();
 
     expect(wrapper.contains(<span>item-loading</span>)).toBe(false);
     expect(wrapper.find("h1").contains(<span>1</span>)).toBe(true);
@@ -402,14 +414,15 @@ describe("test item", () => {
     expect(wrapper.find("h2").contains(<span>no-author</span>)).toBe(true);
   });
   it("commitAttributes should throw error when item is empty", async () => {
-    const { Repository, Branch, Item } = stateFactory<{
-      blogPost: {
-        listParameter: {
-          sort: "asc" | "desc";
+    const { Repository, Branch, Item } =
+      stateFactory<{
+        blogPost: {
+          listParameter: {
+            sort: "asc" | "desc";
+          };
+          item: blogPostType;
         };
-        item: blogPostType;
-      };
-    }>();
+      }>();
 
     const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
       items: [
@@ -478,14 +491,15 @@ describe("test item", () => {
   });
 
   it("commitRelationships should throw error when item is empty", async () => {
-    const { Repository, Branch, Item } = stateFactory<{
-      blogPost: {
-        listParameter: {
-          sort: "asc" | "desc";
+    const { Repository, Branch, Item } =
+      stateFactory<{
+        blogPost: {
+          listParameter: {
+            sort: "asc" | "desc";
+          };
+          item: blogPostType;
         };
-        item: blogPostType;
-      };
-    }>();
+      }>();
 
     const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
       items: [
@@ -554,6 +568,8 @@ describe("test item", () => {
   });
 
   it("id should be an object too", async () => {
+    const callIdleCallbacks = registerRequestIdleCallback();
+
     type blogPostType = {
       id: { foo: string; bar: string };
       model: "blogPost";
@@ -569,14 +585,15 @@ describe("test item", () => {
       };
     };
 
-    const { Repository, Branch, Item } = stateFactory<{
-      blogPost: {
-        listParameter: {
-          sort: "asc" | "desc";
+    const { Repository, Branch, Item } =
+      stateFactory<{
+        blogPost: {
+          listParameter: {
+            sort: "asc" | "desc";
+          };
+          item: blogPostType;
         };
-        item: blogPostType;
-      };
-    }>();
+      }>();
 
     const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
       items: [
@@ -644,6 +661,7 @@ describe("test item", () => {
     expect(wrapper.contains(<span>item-loading</span>)).toBe(true);
 
     await item.resolve();
+    callIdleCallbacks();
 
     expect(wrapper.find("h1").contains(<span>foo1</span>)).toBe(true);
 
@@ -653,14 +671,17 @@ describe("test item", () => {
   });
 
   it("Using a deleted Item should throw an error", async () => {
-    const { Repository, Branch, Item, Merge } = stateFactory<{
-      blogPost: {
-        listParameter: {
-          sort: "asc" | "desc";
+    const callIdleCallbacks = registerRequestIdleCallback();
+
+    const { Repository, Branch, Item, Merge } =
+      stateFactory<{
+        blogPost: {
+          listParameter: {
+            sort: "asc" | "desc";
+          };
+          item: blogPostType;
         };
-        item: blogPostType;
-      };
-    }>();
+      }>();
 
     const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
       items: [
@@ -739,6 +760,7 @@ describe("test item", () => {
     expect(wrapper.contains(<span>item-loading</span>)).toBe(true);
 
     await item.resolve();
+    callIdleCallbacks();
 
     expect(wrapper.contains(<span>item-loading</span>)).toBe(false);
     expect(wrapper.find("h1").contains(<span>{0}</span>)).toBe(true);
@@ -749,23 +771,26 @@ describe("test item", () => {
   });
 
   it("Sideload relationships should cause caching", async () => {
-    const { Repository, Branch, Item } = stateFactory<{
-      blogPost: {
-        listParameter: {
-          sort: "asc" | "desc";
+    const callIdleCallbacks = registerRequestIdleCallback();
+
+    const { Repository, Branch, Item } =
+      stateFactory<{
+        blogPost: {
+          listParameter: {
+            sort: "asc" | "desc";
+          };
+          item: blogPostType;
         };
-        item: blogPostType;
-      };
-      user: {
-        listParameter: never;
-        item: {
-          id: string;
-          model: "user";
-          attributes: { username: string };
-          relationships: {};
+        user: {
+          listParameter: never;
+          item: {
+            id: string;
+            model: "user";
+            attributes: { username: string };
+            relationships: {};
+          };
         };
-      };
-    }>();
+      }>();
 
     const blogList = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
       items: [
@@ -844,41 +869,45 @@ describe("test item", () => {
     );
 
     await blogItem.resolve();
+    callIdleCallbacks();
 
     expect(wrapper.contains(<div>user-foo</div>)).toBe(true);
   });
 
   it("Sideload relationships array should cause caching", async () => {
-    const { Repository, Branch, Item } = stateFactory<{
-      blogPost: {
-        listParameter: {
-          sort: "asc" | "desc";
-        };
-        item: {
-          id: string;
-          model: "blogPost";
-          attributes: {
-            name: string;
-            counter: number;
+    const callIdleCallbacks = registerRequestIdleCallback();
+
+    const { Repository, Branch, Item } =
+      stateFactory<{
+        blogPost: {
+          listParameter: {
+            sort: "asc" | "desc";
           };
-          relationships: {
-            authors: {
-              model: "user";
-              id: string;
-            }[];
+          item: {
+            id: string;
+            model: "blogPost";
+            attributes: {
+              name: string;
+              counter: number;
+            };
+            relationships: {
+              authors: {
+                model: "user";
+                id: string;
+              }[];
+            };
           };
         };
-      };
-      user: {
-        listParameter: never;
-        item: {
-          id: string;
-          model: "user";
-          attributes: { username: string };
-          relationships: {};
+        user: {
+          listParameter: never;
+          item: {
+            id: string;
+            model: "user";
+            attributes: { username: string };
+            relationships: {};
+          };
         };
-      };
-    }>();
+      }>();
 
     const blogList = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
       items: [
@@ -965,6 +994,7 @@ describe("test item", () => {
     );
 
     await blogItem.resolve();
+    callIdleCallbacks();
 
     expect(wrapper.contains(<div>user-foo</div>)).toBe(true);
     expect(wrapper.contains(<div>user-bar</div>)).toBe(true);

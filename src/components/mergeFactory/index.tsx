@@ -102,13 +102,11 @@ export default <T extends entitiesContainerTemplate>(
       Props: Props<props<T>>,
       componentInstance: ComponentInstance<any, any, any>
     ) {
-      const { dispatch: repositoryDispatch } = repositoryContext.findProvider(
-        componentInstance
-      );
+      const { dispatch: repositoryDispatch } =
+        repositoryContext.findProvider(componentInstance);
 
-      const { dispatch: branchDispatch } = branchContext.findProvider(
-        componentInstance
-      );
+      const { dispatch: branchDispatch } =
+        branchContext.findProvider(componentInstance);
 
       const merge: merge<T> = (changes) => {
         repositoryDispatch({
@@ -152,9 +150,9 @@ export default <T extends entitiesContainerTemplate>(
                         change.type === "ATTRIBUTES_CHANGE" ||
                         change.type === "RELATIONSHIPS_CHANGE"
                       ) {
-                        const original = (repositoryState.entities[
-                          change.model
-                        ] as any)[change.id].payload as T[keyof T]["item"];
+                        const original = (
+                          repositoryState.entities[change.model] as any
+                        )[change.id].payload as T[keyof T]["item"];
 
                         if (change.model in changes === false) {
                           changes[change.model] = {};

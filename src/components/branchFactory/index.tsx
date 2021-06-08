@@ -11,15 +11,13 @@ import type { entitiesContainerTemplate, entityEmpty } from "../../types";
 import type { repositoryActions, repositoryState } from "../repositoryFactory";
 import idSerializer from "../../util/idSerializer";
 
-type changedAttributes<
-  T extends entitiesContainerTemplate,
-  U extends keyof T
-> = {
-  type: "ATTRIBUTES_CHANGE";
-  model: U;
-  id: string;
-  payload: Partial<T[U]["item"]["attributes"]>;
-};
+type changedAttributes<T extends entitiesContainerTemplate, U extends keyof T> =
+  {
+    type: "ATTRIBUTES_CHANGE";
+    model: U;
+    id: string;
+    payload: Partial<T[U]["item"]["attributes"]>;
+  };
 
 type changedRelationships<
   T extends entitiesContainerTemplate,
@@ -34,10 +32,7 @@ type changedRelationships<
 type syncReadListRequest<
   T extends entitiesContainerTemplate,
   U extends keyof T
-> = (request: {
-  model: U;
-  parameter: T[U]["listParameter"];
-}) =>
+> = (request: { model: U; parameter: T[U]["listParameter"] }) =>
   | {
       hasError: false;
       isLoading: boolean;

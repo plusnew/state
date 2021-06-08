@@ -5,9 +5,7 @@ export function promiseHandler<T, U>(cb: (data: T) => U) {
   return {
     fn: jest.fn((data: T) => {
       datas.push(cb(data));
-      promises.push(
-        new Promise<U>((resolve) => cbs.push(resolve))
-      );
+      promises.push(new Promise<U>((resolve) => cbs.push(resolve)));
       return promises[promises.length - 1];
     }),
     resolve: () =>
@@ -24,4 +22,16 @@ export async function tick(count: number) {
   for (let i = 0; i < count; i += 1) {
     await new Promise<void>((resolve) => resolve());
   }
+}
+
+export function registerRequestIdleCallback() {
+  let cbs: (() => void)[] = [];
+
+  spyOn(window, "requestAnimationFrame").and.callFake((cb) => cbs.push(cb));
+
+  return () => {
+    const oldCbs = cbs;
+    cbs = [];
+    oldCbs.forEach((cb) => cb());
+  };
 }

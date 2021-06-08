@@ -2,7 +2,7 @@ import plusnew, { store } from "@plusnew/core";
 import enzymeAdapterPlusnew, { mount } from "@plusnew/enzyme-adapter";
 import { configure } from "enzyme";
 import stateFactory from "../../index";
-import { promiseHandler } from "testHelper";
+import { promiseHandler, registerRequestIdleCallback } from "testHelper";
 
 configure({ adapter: new enzymeAdapterPlusnew() });
 
@@ -23,14 +23,17 @@ type blogPostType = {
 
 describe("test reduce", () => {
   it("basic reduce test, with unloaded items", async () => {
-    const { Repository, Branch, Reduce } = stateFactory<{
-      blogPost: {
-        listParameter: {
-          sort: "asc" | "desc";
+    const callIdleCallbacks = registerRequestIdleCallback();
+
+    const { Repository, Branch, Reduce } =
+      stateFactory<{
+        blogPost: {
+          listParameter: {
+            sort: "asc" | "desc";
+          };
+          item: blogPostType;
         };
-        item: blogPostType;
-      };
-    }>();
+      }>();
 
     const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
       items: [
@@ -101,20 +104,24 @@ describe("test reduce", () => {
     expect(wrapper.contains(<div>{0}</div>)).toBe(true);
 
     await item.resolve();
+    callIdleCallbacks();
 
     expect(wrapper.contains(<span>not-loading</span>)).toBe(true);
     expect(wrapper.contains(<div>{3}</div>)).toBe(true);
   });
 
   it("basic reduce test, with loading items", async () => {
-    const { Repository, Branch, Reduce, Item } = stateFactory<{
-      blogPost: {
-        listParameter: {
-          sort: "asc" | "desc";
+    const callIdleCallbacks = registerRequestIdleCallback();
+
+    const { Repository, Branch, Reduce, Item } =
+      stateFactory<{
+        blogPost: {
+          listParameter: {
+            sort: "asc" | "desc";
+          };
+          item: blogPostType;
         };
-        item: blogPostType;
-      };
-    }>();
+      }>();
 
     const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
       items: [
@@ -191,20 +198,24 @@ describe("test reduce", () => {
     expect(wrapper.contains(<div>{0}</div>)).toBe(true);
 
     await item.resolve();
+    callIdleCallbacks();
 
     expect(wrapper.contains(<span>not-loading</span>)).toBe(true);
     expect(wrapper.contains(<div>{3}</div>)).toBe(true);
   });
 
   it("basic reduce test, with loaded items", async () => {
-    const { Repository, Branch, Reduce, Item } = stateFactory<{
-      blogPost: {
-        listParameter: {
-          sort: "asc" | "desc";
+    const callIdleCallbacks = registerRequestIdleCallback();
+
+    const { Repository, Branch, Reduce, Item } =
+      stateFactory<{
+        blogPost: {
+          listParameter: {
+            sort: "asc" | "desc";
+          };
+          item: blogPostType;
         };
-        item: blogPostType;
-      };
-    }>();
+      }>();
 
     const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
       items: [
@@ -285,6 +296,7 @@ describe("test reduce", () => {
     );
 
     await item.resolve();
+    callIdleCallbacks();
     show.dispatch(true);
 
     expect(wrapper.contains(<span>is-loading</span>)).toBe(true);
@@ -297,14 +309,15 @@ describe("test reduce", () => {
   });
 
   it("reduce with null-parameter, should not request data", async () => {
-    const { Repository, Branch, Reduce } = stateFactory<{
-      blogPost: {
-        listParameter: {
-          sort: "asc" | "desc";
+    const { Repository, Branch, Reduce } =
+      stateFactory<{
+        blogPost: {
+          listParameter: {
+            sort: "asc" | "desc";
+          };
+          item: blogPostType;
         };
-        item: blogPostType;
-      };
-    }>();
+      }>();
 
     const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
       items: [

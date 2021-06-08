@@ -2,7 +2,7 @@ import plusnew, { Try } from "@plusnew/core";
 import enzymeAdapterPlusnew, { mount } from "@plusnew/enzyme-adapter";
 import { configure } from "enzyme";
 import stateFactory from "./index";
-import { promiseHandler, tick } from "testHelper";
+import { promiseHandler, registerRequestIdleCallback, tick } from "testHelper";
 
 configure({ adapter: new enzymeAdapterPlusnew() });
 
@@ -17,14 +17,17 @@ type blogPostType = {
 
 describe("test statefactory", () => {
   it("basic", async () => {
-    const { Repository, Branch, Item, List } = stateFactory<{
-      blogPost: {
-        listParameter: {
-          sort: "asc" | "desc";
+    const callIdleCallbacks = registerRequestIdleCallback();
+
+    const { Repository, Branch, Item, List } =
+      stateFactory<{
+        blogPost: {
+          listParameter: {
+            sort: "asc" | "desc";
+          };
+          item: blogPostType;
         };
-        item: blogPostType;
-      };
-    }>();
+      }>();
 
     const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
       items: [
@@ -90,6 +93,7 @@ describe("test statefactory", () => {
     expect(wrapper.contains(<span>item-loading</span>)).toBe(true);
 
     await item.resolve();
+    callIdleCallbacks();
 
     expect(wrapper.contains(<div>list-loading</div>)).toBe(false);
     expect(wrapper.contains(<span>item-loading</span>)).toBe(false);
@@ -98,14 +102,15 @@ describe("test statefactory", () => {
   });
 
   it("list fails", async () => {
-    const { Repository, Branch, List } = stateFactory<{
-      blogPost: {
-        listParameter: {
-          sort: "asc" | "desc";
+    const { Repository, Branch, List } =
+      stateFactory<{
+        blogPost: {
+          listParameter: {
+            sort: "asc" | "desc";
+          };
+          item: blogPostType;
         };
-        item: blogPostType;
-      };
-    }>();
+      }>();
 
     const wrapper = mount(
       <Repository
@@ -144,14 +149,15 @@ describe("test statefactory", () => {
   });
 
   it("item fails", async () => {
-    const { Repository, Branch, List, Item } = stateFactory<{
-      blogPost: {
-        listParameter: {
-          sort: "asc" | "desc";
+    const { Repository, Branch, List, Item } =
+      stateFactory<{
+        blogPost: {
+          listParameter: {
+            sort: "asc" | "desc";
+          };
+          item: blogPostType;
         };
-        item: blogPostType;
-      };
-    }>();
+      }>();
 
     const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
       items: [
@@ -218,14 +224,15 @@ describe("test statefactory", () => {
   });
 
   it("list request with loaded entities", async () => {
-    const { Repository, Branch, Item, List } = stateFactory<{
-      blogPost: {
-        listParameter: {
-          sort: "asc" | "desc";
+    const { Repository, Branch, Item, List } =
+      stateFactory<{
+        blogPost: {
+          listParameter: {
+            sort: "asc" | "desc";
+          };
+          item: blogPostType;
         };
-        item: blogPostType;
-      };
-    }>();
+      }>();
 
     const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
       items: [
@@ -303,14 +310,17 @@ describe("test statefactory", () => {
   });
 
   it("Merge Deletions should remove entities of lists immidiatley, and invalidate their cache", async () => {
-    const { Repository, Branch, Item, List, Merge } = stateFactory<{
-      blogPost: {
-        listParameter: {
-          sort: "asc" | "desc";
+    const callIdleCallbacks = registerRequestIdleCallback();
+
+    const { Repository, Branch, Item, List, Merge } =
+      stateFactory<{
+        blogPost: {
+          listParameter: {
+            sort: "asc" | "desc";
+          };
+          item: blogPostType;
         };
-        item: blogPostType;
-      };
-    }>();
+      }>();
 
     let listItems = [
       {
@@ -397,6 +407,7 @@ describe("test statefactory", () => {
     expect(wrapper.contains(<span>item-loading</span>)).toBe(true);
 
     await item.resolve();
+    callIdleCallbacks();
 
     expect(wrapper.contains(<div>list-loading</div>)).toBe(false);
     expect(wrapper.contains(<div>amount:2</div>)).toBe(true);
@@ -431,6 +442,7 @@ describe("test statefactory", () => {
     expect(wrapper.contains(<span>foo-3</span>)).toBe(false);
 
     await item.resolve();
+    callIdleCallbacks();
 
     expect(wrapper.contains(<div>list-loading</div>)).toBe(false);
     expect(wrapper.contains(<div>amount:1</div>)).toBe(true);
