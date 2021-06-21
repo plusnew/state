@@ -1,6 +1,6 @@
 {
 	"name": "@plusnew/state",
-	"version": "0.15.0",
+	"version": "0.15.1",
 	"description": "library for doing complex statemanagement in plusnew",
 	"main": "src/index.tsx",
 	"module": "src/index.tsx",
