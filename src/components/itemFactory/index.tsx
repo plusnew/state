@@ -17,10 +17,12 @@ type interact<T extends entitiesContainerTemplate, U extends keyof T> = {
   ) => void;
 };
 
-type filledRenderProps<T extends entitiesContainerTemplate, U extends keyof T> =
-
-    | { isLoading: false; item: T[U]["item"]; isEmpty: false }
-    | { isLoading: true; item: T[U]["item"] | null; isEmpty: false };
+type filledRenderProps<
+  T extends entitiesContainerTemplate,
+  U extends keyof T
+> =
+  | { isLoading: false; item: T[U]["item"]; isEmpty: false }
+  | { isLoading: true; item: T[U]["item"] | null; isEmpty: false };
 
 type itemRenderProps<
   T extends entitiesContainerTemplate,
@@ -28,9 +30,7 @@ type itemRenderProps<
   Id extends T[U]["item"]["id"] | null
 > = (
   value: Id extends null
-    ?
-        | { isLoading: false; item: T[U]["item"] | null; isEmpty: boolean }
-        | { isLoading: true; item: T[U]["item"] | null; isEmpty: false }
+    ? { isLoading: false; item: null; isEmpty: true }
     : filledRenderProps<T, U>,
 
   interact: interact<T, U>

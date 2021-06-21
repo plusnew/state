@@ -25,13 +25,15 @@ export async function tick(count: number) {
 }
 
 export function registerRequestIdleCallback() {
-  let cbs: (() => void)[] = [];
+  let cbs: FrameRequestCallback[] = [];
 
-  spyOn(window, "requestAnimationFrame").and.callFake((cb) => cbs.push(cb));
+  jest
+    .spyOn(window, "requestAnimationFrame")
+    .mockImplementation((cb) => cbs.push(cb));
 
   return () => {
     const oldCbs = cbs;
     cbs = [];
-    oldCbs.forEach((cb) => cb());
+    oldCbs.forEach((cb) => cb(1));
   };
 }

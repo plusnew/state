@@ -25,15 +25,14 @@ describe("test item", () => {
   it("commitAttributeChange, should not affect other branches", async () => {
     const callIdleCallbacks = registerRequestIdleCallback();
 
-    const { Repository, Branch, Item } =
-      stateFactory<{
-        blogPost: {
-          listParameter: {
-            sort: "asc" | "desc";
-          };
-          item: blogPostType;
+    const { Repository, Branch, Item } = stateFactory<{
+      blogPost: {
+        listParameter: {
+          sort: "asc" | "desc";
         };
-      }>();
+        item: blogPostType;
+      };
+    }>();
 
     const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
       items: [
@@ -155,15 +154,14 @@ describe("test item", () => {
   it("commitRelationships, should not affect other branches", async () => {
     const callIdleCallbacks = registerRequestIdleCallback();
 
-    const { Repository, Branch, Item } =
-      stateFactory<{
-        blogPost: {
-          listParameter: {
-            sort: "asc" | "desc";
-          };
-          item: blogPostType;
+    const { Repository, Branch, Item } = stateFactory<{
+      blogPost: {
+        listParameter: {
+          sort: "asc" | "desc";
         };
-      }>();
+        item: blogPostType;
+      };
+    }>();
 
     const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
       items: [
@@ -294,15 +292,14 @@ describe("test item", () => {
   it("commitRelationships, should be nullable", async () => {
     const callIdleCallbacks = registerRequestIdleCallback();
 
-    const { Repository, Branch, Item, Merge } =
-      stateFactory<{
-        blogPost: {
-          listParameter: {
-            sort: "asc" | "desc";
-          };
-          item: blogPostType;
+    const { Repository, Branch, Item, Merge } = stateFactory<{
+      blogPost: {
+        listParameter: {
+          sort: "asc" | "desc";
         };
-      }>();
+        item: blogPostType;
+      };
+    }>();
 
     const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
       items: [
@@ -414,15 +411,14 @@ describe("test item", () => {
     expect(wrapper.find("h2").contains(<span>no-author</span>)).toBe(true);
   });
   it("commitAttributes should throw error when item is empty", async () => {
-    const { Repository, Branch, Item } =
-      stateFactory<{
-        blogPost: {
-          listParameter: {
-            sort: "asc" | "desc";
-          };
-          item: blogPostType;
+    const { Repository, Branch, Item } = stateFactory<{
+      blogPost: {
+        listParameter: {
+          sort: "asc" | "desc";
         };
-      }>();
+        item: blogPostType;
+      };
+    }>();
 
     const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
       items: [
@@ -491,15 +487,14 @@ describe("test item", () => {
   });
 
   it("commitRelationships should throw error when item is empty", async () => {
-    const { Repository, Branch, Item } =
-      stateFactory<{
-        blogPost: {
-          listParameter: {
-            sort: "asc" | "desc";
-          };
-          item: blogPostType;
+    const { Repository, Branch, Item } = stateFactory<{
+      blogPost: {
+        listParameter: {
+          sort: "asc" | "desc";
         };
-      }>();
+        item: blogPostType;
+      };
+    }>();
 
     const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
       items: [
@@ -585,15 +580,14 @@ describe("test item", () => {
       };
     };
 
-    const { Repository, Branch, Item } =
-      stateFactory<{
-        blogPost: {
-          listParameter: {
-            sort: "asc" | "desc";
-          };
-          item: blogPostType;
+    const { Repository, Branch, Item } = stateFactory<{
+      blogPost: {
+        listParameter: {
+          sort: "asc" | "desc";
         };
-      }>();
+        item: blogPostType;
+      };
+    }>();
 
     const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
       items: [
@@ -673,15 +667,14 @@ describe("test item", () => {
   it("Using a deleted Item should throw an error", async () => {
     const callIdleCallbacks = registerRequestIdleCallback();
 
-    const { Repository, Branch, Item, Merge } =
-      stateFactory<{
-        blogPost: {
-          listParameter: {
-            sort: "asc" | "desc";
-          };
-          item: blogPostType;
+    const { Repository, Branch, Item, Merge } = stateFactory<{
+      blogPost: {
+        listParameter: {
+          sort: "asc" | "desc";
         };
-      }>();
+        item: blogPostType;
+      };
+    }>();
 
     const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
       items: [
@@ -773,24 +766,23 @@ describe("test item", () => {
   it("Sideload relationships should cause caching", async () => {
     const callIdleCallbacks = registerRequestIdleCallback();
 
-    const { Repository, Branch, Item } =
-      stateFactory<{
-        blogPost: {
-          listParameter: {
-            sort: "asc" | "desc";
-          };
-          item: blogPostType;
+    const { Repository, Branch, Item } = stateFactory<{
+      blogPost: {
+        listParameter: {
+          sort: "asc" | "desc";
         };
-        user: {
-          listParameter: never;
-          item: {
-            id: string;
-            model: "user";
-            attributes: { username: string };
-            relationships: {};
-          };
+        item: blogPostType;
+      };
+      user: {
+        listParameter: never;
+        item: {
+          id: string;
+          model: "user";
+          attributes: { username: string };
+          relationships: {};
         };
-      }>();
+      };
+    }>();
 
     const blogList = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
       items: [
@@ -877,37 +869,36 @@ describe("test item", () => {
   it("Sideload relationships array should cause caching", async () => {
     const callIdleCallbacks = registerRequestIdleCallback();
 
-    const { Repository, Branch, Item } =
-      stateFactory<{
-        blogPost: {
-          listParameter: {
-            sort: "asc" | "desc";
+    const { Repository, Branch, Item } = stateFactory<{
+      blogPost: {
+        listParameter: {
+          sort: "asc" | "desc";
+        };
+        item: {
+          id: string;
+          model: "blogPost";
+          attributes: {
+            name: string;
+            counter: number;
           };
-          item: {
-            id: string;
-            model: "blogPost";
-            attributes: {
-              name: string;
-              counter: number;
-            };
-            relationships: {
-              authors: {
-                model: "user";
-                id: string;
-              }[];
-            };
+          relationships: {
+            authors: {
+              model: "user";
+              id: string;
+            }[];
           };
         };
-        user: {
-          listParameter: never;
-          item: {
-            id: string;
-            model: "user";
-            attributes: { username: string };
-            relationships: {};
-          };
+      };
+      user: {
+        listParameter: never;
+        item: {
+          id: string;
+          model: "user";
+          attributes: { username: string };
+          relationships: {};
         };
-      }>();
+      };
+    }>();
 
     const blogList = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
       items: [
