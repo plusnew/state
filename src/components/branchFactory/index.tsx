@@ -11,13 +11,15 @@ import type { entitiesContainerTemplate, entityEmpty } from "../../types";
 import type { repositoryActions, repositoryState } from "../repositoryFactory";
 import idSerializer from "../../util/idSerializer";
 
-type changedAttributes<T extends entitiesContainerTemplate, U extends keyof T> =
-  {
-    type: "ATTRIBUTES_CHANGE";
-    model: U;
-    id: string;
-    payload: Partial<T[U]["item"]["attributes"]>;
-  };
+type changedAttributes<
+  T extends entitiesContainerTemplate,
+  U extends keyof T
+> = {
+  type: "ATTRIBUTES_CHANGE";
+  model: U;
+  id: string;
+  payload: Partial<T[U]["item"]["attributes"]>;
+};
 
 type changedRelationships<
   T extends entitiesContainerTemplate,
@@ -85,8 +87,8 @@ export default <T extends entitiesContainerTemplate>(
   repositoryContext: Context<repositoryState<T>, repositoryActions<T>>,
   branchContext: Context<branchState<T>, branchActions<T>>
 ) =>
-  class Item extends Component<props> {
-    static displayName = __dirname;
+  class Branch extends Component<props> {
+    static displayName = "StateBranch";
     render(
       Props: Props<props>,
       componentInstance: ComponentInstance<props, any, any>

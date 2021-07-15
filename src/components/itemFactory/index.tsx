@@ -54,7 +54,7 @@ export default <T extends entitiesContainerTemplate>(
     U extends keyof T,
     Id extends T[U]["item"]["id"] | null
   > extends Component<props<T, U, Id>> {
-    static displayName = __dirname;
+    static displayName = "StateItem";
     render(
       Props: Props<props<T, U, Id>>,
       componentInstance: ComponentInstance<any, any, any>

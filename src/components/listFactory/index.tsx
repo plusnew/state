@@ -8,13 +8,15 @@ import type { entitiesContainerTemplate, entityEmpty } from "../../types";
 import type { branchState, branchActions } from "../branchFactory";
 import type { repositoryState, repositoryActions } from "../repositoryFactory";
 
-type listRenderProps<T extends entitiesContainerTemplate, U extends keyof T> =
-  (value: {
-    isLoading: boolean;
-    items: entityEmpty<U, T[U]["item"]["id"]>[];
-    totalCount: number;
-    isEmpty: boolean;
-  }) => ApplicationElement;
+type listRenderProps<
+  T extends entitiesContainerTemplate,
+  U extends keyof T
+> = (value: {
+  isLoading: boolean;
+  items: entityEmpty<U, T[U]["item"]["id"]>[];
+  totalCount: number;
+  isEmpty: boolean;
+}) => ApplicationElement;
 
 type props<T extends entitiesContainerTemplate, U extends keyof T> = {
   model: U;
@@ -27,7 +29,7 @@ export default <T extends entitiesContainerTemplate>(
   branchContext: Context<branchState<T>, branchActions<T>>
 ) =>
   class List<U extends keyof T> extends Component<props<T, U>> {
-    static displayName = __dirname;
+    static displayName = "StateList";
     render(Props: Props<props<T, U>>) {
       return (
         <repositoryContext.Consumer>

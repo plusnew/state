@@ -31,7 +31,7 @@ export default <T extends entitiesContainerTemplate>(
   branchContext: Context<branchState<T>, branchActions<T>>
 ) =>
   class Reduce<U extends keyof T, A> extends Component<props<T, U, A>> {
-    static displayName = __dirname;
+    static displayName = "StateReduce";
     render(Props: Props<props<T, U, A>>) {
       return (
         <repositoryContext.Consumer>

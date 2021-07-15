@@ -96,8 +96,8 @@ export default <T extends entitiesContainerTemplate>(
   repositoryContext: Context<repositoryState<T>, repositoryActions<T>>,
   branchContext: Context<branchState<T>, branchActions<T>>
 ) =>
-  class List extends Component<props<T>> {
-    static displayName = __dirname;
+  class Merge extends Component<props<T>> {
+    static displayName = "StateMerge";
     render(
       Props: Props<props<T>>,
       componentInstance: ComponentInstance<any, any, any>

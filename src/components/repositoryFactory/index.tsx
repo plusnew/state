@@ -165,16 +165,18 @@ type itemsInsertErrorAction<T extends entitiesContainerTemplate> = {
   };
 };
 
-type listInsertAction<T extends entitiesContainerTemplate, U extends keyof T> =
-  {
-    type: "LIST_INSERT";
-    model: U;
-    query: string;
-    payload: {
-      items: T[U]["item"][] | entityEmpty<U, T[U]["item"]["id"]>[];
-      totalCount: number;
-    };
+type listInsertAction<
+  T extends entitiesContainerTemplate,
+  U extends keyof T
+> = {
+  type: "LIST_INSERT";
+  model: U;
+  query: string;
+  payload: {
+    items: T[U]["item"][] | entityEmpty<U, T[U]["item"]["id"]>[];
+    totalCount: number;
   };
+};
 
 type listErrorAction<T extends entitiesContainerTemplate, U extends keyof T> = {
   type: "LIST_ERROR";
@@ -306,7 +308,7 @@ export default <T extends entitiesContainerTemplate>(
     );
   }
   return class Repository extends Component<props<T>> {
-    static displayName = __dirname;
+    static displayName = "StateRepository";
     render(Props: Props<props<T>>) {
       let loadingLists: [keyof T, string][] = [];
       let loadingItems: [keyof T, number | string][] = [];
