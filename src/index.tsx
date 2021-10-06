@@ -23,7 +23,7 @@ export default function factory<T extends entitiesContainerTemplate>() {
     Item: itemFactory(repositoryContext, branchContext),
     Reduce: reduceFactory(repositoryContext, branchContext),
     Merge: mergeFactory(repositoryContext, branchContext),
-    RepositoryContextConsumer: repositoryContext.Consumer,
-    BranchContextConsumer: branchContext.Consumer,
+    repositoryContext: repositoryContext,
+    branchContext: branchContext,
   };
 }
