@@ -2,7 +2,7 @@ export type idTemplate =
   | string
   | number
   | boolean
-  | { [key: string]: idTemplate };
+  | { [key: string]: idTemplate | null };
 
 export type entityEmpty<entityName, id extends idTemplate> = {
   id: id;

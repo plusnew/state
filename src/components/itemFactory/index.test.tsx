@@ -632,8 +632,110 @@ describe("test item", () => {
                 model="blogPost"
                 id={
                   toggleState
-                    ? { foo: "foo1", bar: "bar1", mep: true }
-                    : { bar: "bar1", foo: "foo1", mep: true }
+                    ? { foo: "foo1", bar: "bar1" }
+                    : { bar: "bar1", foo: "foo1" }
+                }
+              >
+                {(view) =>
+                  view.isLoading ? (
+                    <span>item-loading</span>
+                  ) : (
+                    <h1>
+                      <span>{view.item.attributes.name}</span>
+                    </h1>
+                  )
+                }
+              </Item>
+            )}
+          </toggle.Observer>
+        </Branch>
+      </Repository>
+    );
+
+    expect(wrapper.contains(<span>item-loading</span>)).toBe(true);
+
+    await item.resolve();
+    callIdleCallbacks();
+
+    expect(wrapper.find("h1").contains(<span>foo1</span>)).toBe(true);
+
+    toggle.dispatch(false);
+
+    expect(wrapper.find("h1").contains(<span>foo1</span>)).toBe(true);
+  });
+
+  it("id should be an object with nulls too", async () => {
+    const callIdleCallbacks = registerRequestIdleCallback();
+
+    type blogPostType = {
+      id: { foo: string; bar: null };
+      model: "blogPost";
+      attributes: {
+        name: string;
+        counter: number;
+      };
+      relationships: {
+        author: {
+          model: "user";
+          id: string;
+        };
+      };
+    };
+
+    const { Repository, Branch, Item } = stateFactory<{
+      blogPost: {
+        listParameter: {
+          sort: "asc" | "desc";
+        };
+        item: blogPostType;
+      };
+    }>();
+
+    const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
+      items: [
+        {
+          id: { foo: "foo1", bar: null },
+          model: "blogPost" as const,
+        },
+      ],
+      totalCount: 1,
+    }));
+
+    const item = promiseHandler((id: { foo: string; bar: null }) => ({
+      id: id,
+      model: "blogPost" as const,
+      attributes: {
+        name: `${id.foo}`,
+        counter: 0,
+      },
+      relationships: {
+        author: {
+          model: "user" as const,
+          id: "1",
+        },
+      },
+    }));
+
+    const toggle = store(true);
+
+    const wrapper = mount(
+      <Repository
+        requests={{
+          blogPost: {
+            readList: list.fn,
+            readItem: item.fn,
+          },
+        }}
+      >
+        <Branch>
+          <toggle.Observer>
+            {(toggleState) => (
+              <Item
+                model="blogPost"
+                id={
+                  toggleState
+                    ? { foo: "foo1", bar: null }
+                    : { bar: null, foo: "foo1" }
                 }
               >
                 {(view) =>

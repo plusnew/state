@@ -10,7 +10,10 @@ export default function idSerializer(id: idTemplate): string {
   } else if (typeof id === "object") {
     return `{${Object.keys(id)
       .sort()
-      .map((key) => `${key}:${idSerializer(id[key])}`)
+      .map((key) => {
+        const value = id[key];
+        return `${key}:${value === null ? "null" : idSerializer(value)}`;
+      })
       .join(",")}}`;
   }
   throw new Error("Not a valid type");
