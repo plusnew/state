@@ -1,5 +1,5 @@
-import plusnew, { Component, Props, store } from "@plusnew/core";
-import type { Context, ApplicationElement } from "@plusnew/core";
+import plusnew, { Component, store } from "@plusnew/core";
+import type { Context, Props, ApplicationElement } from "@plusnew/core";
 import type ComponentInstance from "@plusnew/core/src/instances/types/Component/Instance";
 import type Instance from "@plusnew/core/src/instances/types/Instance";
 import type { entitiesContainerTemplate, entityEmpty } from "../../types";
