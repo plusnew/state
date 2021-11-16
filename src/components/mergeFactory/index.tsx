@@ -1,5 +1,5 @@
-import plusnew, { ApplicationElement, Component, Props } from "@plusnew/core";
-import type { Context } from "@plusnew/core";
+import plusnew, { Component, Props } from "@plusnew/core";
+import type { Context, ApplicationElement } from "@plusnew/core";
 import type ComponentInstance from "@plusnew/core/src/instances/types/Component/Instance";
 import type { entitiesContainerTemplate, entityEmpty } from "../../types";
 import { mapObject } from "../../util/forEach";

@@ -1,5 +1,5 @@
-import plusnew, { Component, ApplicationElement, Props } from "@plusnew/core";
-import type { Context } from "@plusnew/core";
+import plusnew, { Component, Props } from "@plusnew/core";
+import type { Context, ApplicationElement } from "@plusnew/core";
 import type { entitiesContainerTemplate, entityEmpty } from "../../types";
 import type { branchState, branchActions } from "../branchFactory";
 import type { repositoryState, repositoryActions } from "../repositoryFactory";
