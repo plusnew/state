@@ -1,16 +1,15 @@
-import plusnew, {
-  ApplicationElement,
-  Component,
-  Context,
-  Props,
-} from "@plusnew/core";
+import type { Context } from "@plusnew/core";
+import plusnew, { ApplicationElement, Component, Props } from "@plusnew/core";
 import type ComponentInstance from "@plusnew/core/src/instances/types/Component/Instance";
 import type { entitiesContainerTemplate, entityEmpty } from "../../types";
+import type {
+  dataActions,
+  dataState,
+  repositoryState,
+} from "../../types/dataContext";
 import { mapObject } from "../../util/forEach";
 import { fromEntries } from "../../util/fromEntries";
 import idSerializer from "../../util/idSerializer";
-import type { branchActions, branchState } from "../branchFactory";
-import type { repositoryActions, repositoryState } from "../repositoryFactory";
 
 type changes<T extends entitiesContainerTemplate> = {
   [U in keyof T]?: (
@@ -93,8 +92,7 @@ function isSameRelationship(a: relationships, b: relationships) {
 }
 
 export default <T extends entitiesContainerTemplate>(
-  repositoryContext: Context<repositoryState<T>, repositoryActions<T>>,
-  branchContext: Context<branchState<T>, branchActions<T>>
+  dataContext: Context<dataState<T> & repositoryState<T>, dataActions<T>>
 ) =>
   class Merge extends Component<props<T>> {
     static displayName = "StateMerge";
@@ -102,14 +100,11 @@ export default <T extends entitiesContainerTemplate>(
       Props: Props<props<T>>,
       componentInstance: ComponentInstance<any, any, any>
     ) {
-      const { dispatch: repositoryDispatch } =
-        repositoryContext.findProvider(componentInstance);
-
-      const { dispatch: branchDispatch } =
-        branchContext.findProvider(componentInstance);
+      const { dispatch: dataDispatch } =
+        dataContext.findProvider(componentInstance);
 
       const merge: merge<T> = (changes) => {
-        repositoryDispatch({
+        dataDispatch({
           type: "ITEMS_INSERT",
           payload: {
             items: mapObject(
@@ -125,11 +120,11 @@ export default <T extends entitiesContainerTemplate>(
                       },
                 ])
             ),
-            invalidateInvolvedListCahes: true,
+            invalidateInvolvedListCaches: true,
           },
         });
 
-        branchDispatch({
+        dataDispatch({
           type: "RESET_CHANGELOG",
           payload: mapObject(changes, (change) =>
             Object.keys(change as any)
@@ -137,137 +132,126 @@ export default <T extends entitiesContainerTemplate>(
         });
       };
       return (
-        <repositoryContext.Consumer>
-          {(repositoryState) => (
-            <branchContext.Consumer>
-              {(branchState) => (
-                <Props>
-                  {(props) => {
-                    const changes: any = {};
-                    for (let i = 0; i < branchState.changeLog.length; i++) {
-                      const change = branchState.changeLog[i];
-                      if (
-                        change.type === "ATTRIBUTES_CHANGE" ||
-                        change.type === "RELATIONSHIPS_CHANGE"
-                      ) {
-                        const original = (
-                          repositoryState.entities[change.model] as any
-                        )[change.id].payload as T[keyof T]["item"];
+        <dataContext.Consumer>
+          {(dataState) => (
+            <Props>
+              {(props) => {
+                const changes: any = {};
+                for (let i = 0; i < dataState.changeLog.length; i++) {
+                  const change = dataState.changeLog[i];
+                  if (
+                    change.type === "ATTRIBUTES_CHANGE" ||
+                    change.type === "RELATIONSHIPS_CHANGE"
+                  ) {
+                    const original = (dataState.entities[change.model] as any)[
+                      change.id
+                    ].payload as T[keyof T]["item"];
 
-                        if (change.model in changes === false) {
-                          changes[change.model] = {};
-                        }
+                    if (change.model in changes === false) {
+                      changes[change.model] = {};
+                    }
+                    if (
+                      (change.id as string) in changes[change.model] ===
+                      false
+                    ) {
+                      changes[change.model][change.id] = {
+                        id: original.id,
+                        model: change.model,
+                        isDeleted: false, // Deletionhandling should be improved, as sonn as dataes are capable of deleting
+                        attributes: {
+                          ...original.attributes,
+                        },
+                        changedAttributes: {},
+                        relationships: {
+                          ...original.relationships,
+                        },
+                        changedRelationships: {},
+                      };
+                    }
+
+                    let deleted = false;
+
+                    if (change.type === "ATTRIBUTES_CHANGE") {
+                      for (const attributeName in change.payload) {
                         if (
-                          (change.id as string) in changes[change.model] ===
-                          false
+                          change.payload[attributeName] ===
+                          original.attributes[attributeName]
                         ) {
-                          changes[change.model][change.id] = {
-                            id: original.id,
-                            model: change.model,
-                            isDeleted: false, // Deletionhandling should be improved, as sonn as branches are capable of deleting
-                            attributes: {
-                              ...original.attributes,
-                            },
-                            changedAttributes: {},
-                            relationships: {
-                              ...original.relationships,
-                            },
-                            changedRelationships: {},
-                          };
+                          delete changes[change.model][change.id]
+                            .changedAttributes[attributeName];
+                          changes[change.model][change.id].attributes[
+                            attributeName
+                          ] = change.payload[attributeName];
+
+                          deleted = true;
+                        } else {
+                          changes[change.model][change.id].attributes[
+                            attributeName
+                          ] = change.payload[attributeName];
+
+                          changes[change.model][change.id].changedAttributes[
+                            attributeName
+                          ] = change.payload[attributeName];
                         }
+                      }
+                    } else if (change.type === "RELATIONSHIPS_CHANGE") {
+                      for (const relationshipName in change.payload) {
+                        if (
+                          isSameRelationship(
+                            original.relationships[
+                              relationshipName
+                            ] as relationships,
+                            change.payload[relationshipName] as relationships
+                          )
+                        ) {
+                          delete changes[change.model][change.id]
+                            .changedRelationships[relationshipName];
+                          changes[change.model][change.id].relationships[
+                            relationshipName
+                          ] = change.payload[relationshipName];
 
-                        let deleted = false;
+                          deleted = true;
+                        } else {
+                          changes[change.model][change.id].relationships[
+                            relationshipName
+                          ] = change.payload[relationshipName];
 
-                        if (change.type === "ATTRIBUTES_CHANGE") {
-                          for (const attributeName in change.payload) {
-                            if (
-                              change.payload[attributeName] ===
-                              original.attributes[attributeName]
-                            ) {
-                              delete changes[change.model][change.id]
-                                .changedAttributes[attributeName];
-                              changes[change.model][change.id].attributes[
-                                attributeName
-                              ] = change.payload[attributeName];
-
-                              deleted = true;
-                            } else {
-                              changes[change.model][change.id].attributes[
-                                attributeName
-                              ] = change.payload[attributeName];
-
-                              changes[change.model][
-                                change.id
-                              ].changedAttributes[attributeName] =
-                                change.payload[attributeName];
-                            }
-                          }
-                        } else if (change.type === "RELATIONSHIPS_CHANGE") {
-                          for (const relationshipName in change.payload) {
-                            if (
-                              isSameRelationship(
-                                original.relationships[
-                                  relationshipName
-                                ] as relationships,
-                                change.payload[
-                                  relationshipName
-                                ] as relationships
-                              )
-                            ) {
-                              delete changes[change.model][change.id]
-                                .changedRelationships[relationshipName];
-                              changes[change.model][change.id].relationships[
-                                relationshipName
-                              ] = change.payload[relationshipName];
-
-                              deleted = true;
-                            } else {
-                              changes[change.model][change.id].relationships[
-                                relationshipName
-                              ] = change.payload[relationshipName];
-
-                              changes[change.model][
-                                change.id
-                              ].changedRelationships[relationshipName] =
-                                change.payload[relationshipName];
-                            }
-                          }
-                        }
-
-                        if (deleted) {
-                          if (
-                            Object.keys(
-                              changes[change.model][change.id].changedAttributes
-                            ).length === 0 &&
-                            Object.keys(
-                              changes[change.model][change.id]
-                                .changedRelationships
-                            ).length === 0
-                          ) {
-                            delete changes[change.model][change.id];
-
-                            if (
-                              Object.keys(changes[change.model]).length === 0
-                            ) {
-                              delete changes[change.model];
-                            }
-                          }
+                          changes[change.model][change.id].changedRelationships[
+                            relationshipName
+                          ] = change.payload[relationshipName];
                         }
                       }
                     }
 
-                    return ((props.children as any)[0] as mergeRenderprops<T>)({
-                      changes: mapObject(changes, (namespace) =>
-                        Object.values(namespace)
-                      ) as changes<T>,
-                      merge,
-                    });
-                  }}
-                </Props>
-              )}
-            </branchContext.Consumer>
+                    if (deleted) {
+                      if (
+                        Object.keys(
+                          changes[change.model][change.id].changedAttributes
+                        ).length === 0 &&
+                        Object.keys(
+                          changes[change.model][change.id].changedRelationships
+                        ).length === 0
+                      ) {
+                        delete changes[change.model][change.id];
+
+                        if (Object.keys(changes[change.model]).length === 0) {
+                          delete changes[change.model];
+                        }
+                      }
+                    }
+                  }
+                }
+
+                return ((props.children as any)[0] as mergeRenderprops<T>)({
+                  changes: mapObject(changes, (namespace) =>
+                    Object.values(namespace)
+                  ) as changes<T>,
+                  merge,
+                });
+              }}
+            </Props>
           )}
-        </repositoryContext.Consumer>
+        </dataContext.Consumer>
       );
     }
   };

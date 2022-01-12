@@ -1,29 +1,30 @@
 import { context } from "@plusnew/core";
+import type {
+  dataState,
+  dataActions,
+  repositoryState,
+} from "./types/dataContext";
 import branchFactory from "./components/branchFactory";
-import type { branchActions, branchState } from "./components/branchFactory";
 import itemFactory from "./components/itemFactory";
 import listFactory from "./components/listFactory";
 import mergeFactory from "./components/mergeFactory";
 import reduceFactory from "./components/reduceFactory";
 import repositoryFactory from "./components/repositoryFactory";
-import type {
-  repositoryActions,
-  repositoryState,
-} from "./components/repositoryFactory";
 import type { entitiesContainerTemplate } from "./types";
 
 export default function factory<T extends entitiesContainerTemplate>() {
-  const repositoryContext = context<repositoryState<T>, repositoryActions<T>>();
-  const branchContext = context<branchState<T>, branchActions<T>>();
+  const dataContext = context<
+    dataState<T> & repositoryState<T>,
+    dataActions<T>
+  >();
 
   return {
-    Repository: repositoryFactory(repositoryContext),
-    Branch: branchFactory(repositoryContext, branchContext),
-    List: listFactory(repositoryContext, branchContext),
-    Item: itemFactory(repositoryContext, branchContext),
-    Reduce: reduceFactory(repositoryContext, branchContext),
-    Merge: mergeFactory(repositoryContext, branchContext),
-    repositoryContext: repositoryContext,
-    branchContext: branchContext,
+    Repository: repositoryFactory(dataContext),
+    Branch: branchFactory(dataContext),
+    List: listFactory(dataContext),
+    Item: itemFactory(dataContext),
+    Reduce: reduceFactory(dataContext),
+    Merge: mergeFactory(dataContext),
+    dataContext: dataContext,
   };
 }

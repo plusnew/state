@@ -1,12 +1,11 @@
-import plusnew, {
-  Component,
-  ApplicationElement,
-  Props,
-  Context,
-} from "@plusnew/core";
+import type { Context } from "@plusnew/core";
+import plusnew, { ApplicationElement, Component, Props } from "@plusnew/core";
 import type { entitiesContainerTemplate, entityEmpty } from "../../types";
-import type { branchState, branchActions } from "../branchFactory";
-import type { repositoryState, repositoryActions } from "../repositoryFactory";
+import type {
+  dataActions,
+  dataState,
+  repositoryState,
+} from "../../types/dataContext";
 
 type listRenderProps<
   T extends entitiesContainerTemplate,
@@ -25,53 +24,45 @@ type props<T extends entitiesContainerTemplate, U extends keyof T> = {
 };
 
 export default <T extends entitiesContainerTemplate>(
-  repositoryContext: Context<repositoryState<T>, repositoryActions<T>>,
-  branchContext: Context<branchState<T>, branchActions<T>>
+  dataContext: Context<dataState<T> & repositoryState<T>, dataActions<T>>
 ) =>
   class List<U extends keyof T> extends Component<props<T, U>> {
     static displayName = "StateList";
     render(Props: Props<props<T, U>>) {
       return (
-        <repositoryContext.Consumer>
-          {(_repositoryContext) => (
-            <branchContext.Consumer>
-              {(branchState) => (
-                <Props>
-                  {(props) => {
-                    if (props.parameter === null) {
-                      return (
-                        (props.children as any)[0] as listRenderProps<
-                          T,
-                          keyof T
-                        >
-                      )({
-                        isEmpty: true,
-                        items: [],
-                        totalCount: 0,
-                        isLoading: false,
-                      });
-                    }
-                    const view = branchState.getList({
-                      model: props.model,
-                      parameter: props.parameter,
-                    });
+        <dataContext.Consumer>
+          {(dataState) => (
+            <Props>
+              {(props) => {
+                if (props.parameter === null) {
+                  return (
+                    (props.children as any)[0] as listRenderProps<T, keyof T>
+                  )({
+                    isEmpty: true,
+                    items: [],
+                    totalCount: 0,
+                    isLoading: false,
+                  });
+                }
+                const view = dataState.getListCache({
+                  model: props.model,
+                  parameter: props.parameter,
+                });
 
-                    if (view.hasError) {
-                      throw view.error;
-                    }
+                if (view.hasError) {
+                  throw view.error;
+                }
 
-                    return (
-                      (props.children as any)[0] as listRenderProps<T, keyof T>
-                    )({
-                      isEmpty: false,
-                      ...view,
-                    });
-                  }}
-                </Props>
-              )}
-            </branchContext.Consumer>
+                return (
+                  (props.children as any)[0] as listRenderProps<T, keyof T>
+                )({
+                  isEmpty: false,
+                  ...view,
+                });
+              }}
+            </Props>
           )}
-        </repositoryContext.Consumer>
+        </dataContext.Consumer>
       );
     }
   };

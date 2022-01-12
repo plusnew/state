@@ -1,10 +1,20 @@
-import plusnew, { Component, store } from "@plusnew/core";
 import type { ApplicationElement, Context, Props } from "@plusnew/core";
+import plusnew, { Component, store } from "@plusnew/core";
 import type {
   entitiesContainerTemplate,
   entityEmpty,
   idTemplate,
 } from "../../types";
+import type {
+  dataActions,
+  dataState,
+  itemsInsertAction,
+  repositoryState,
+  storeEntity,
+  storeList,
+  syncReadItemRequest,
+  syncReadListRequest,
+} from "../../types/dataContext";
 import { mapObject } from "../../util/forEach";
 import { fromEntries } from "../../util/fromEntries";
 import idSerializer from "../../util/idSerializer";
@@ -50,112 +60,6 @@ type props<T extends entitiesContainerTemplate> = {
   };
 };
 
-export type storeEntity<
-  T extends entitiesContainerTemplate,
-  U extends keyof T
-> =
-  | {
-      hasError: false;
-      isDeleted: false;
-      payload: T[U]["item"];
-    }
-  | {
-      hasError: true;
-      error: any;
-      isDeleted: false;
-    }
-  | {
-      hasError: false;
-      isDeleted: true;
-    };
-
-type storeList = {
-  [query: string]:
-    | {
-        hasError: false;
-        ids: string[];
-        totalCount: number;
-        hasInvalidCache: boolean;
-      }
-    | {
-        hasError: true;
-        error: any;
-      };
-};
-
-type syncReadListRequest<
-  T extends entitiesContainerTemplate,
-  U extends keyof T
-> = (request: listRequestParameter<T, U>) =>
-  | {
-      hasError: true;
-      error: any;
-    }
-  | {
-      hasCache: true;
-      hasError: false;
-      hasInvalidCache: boolean;
-      isLoading: boolean;
-      items: entityEmpty<U, T[U]["item"]["id"]>[];
-      totalCount: number;
-    }
-  | {
-      hasCache: false;
-      hasError: false;
-      isLoading: boolean;
-    };
-
-type syncReadItemRequest<
-  T extends entitiesContainerTemplate,
-  U extends keyof T
-> = (request: itemRequestParameter<T, U>) =>
-  | {
-      isDeleted: true;
-      hasError: false;
-    }
-  | {
-      hasError: true;
-      isDeleted: false;
-      error: any;
-    }
-  | {
-      isDeleted: false;
-      hasError: false;
-      hasCache: true;
-      isLoading: boolean;
-      item: T[U]["item"];
-    }
-  | { hasError: false; hasCache: false; isDeleted: false; isLoading: boolean };
-
-export type repositoryState<T extends entitiesContainerTemplate> = {
-  entities: {
-    [model in keyof T]?: {
-      [id: string]: storeEntity<T, model>;
-    };
-  };
-  lists: {
-    [model in keyof T]?: storeList;
-  };
-  getListCache: syncReadListRequest<T, keyof T>;
-  getItemCache: syncReadItemRequest<T, keyof T>;
-  fetchList: (request: listRequestParameter<T, keyof T>) => void;
-  fetchItem: (request: itemRequestParameter<T, keyof T>) => void;
-};
-
-type itemsInsertAction<T extends entitiesContainerTemplate> = {
-  type: "ITEMS_INSERT";
-  payload: {
-    items: {
-      [U in keyof T]?: {
-        [id: string]:
-          | { isDeleted: false; item: T[U]["item"] }
-          | { isDeleted: true };
-      };
-    };
-    invalidateInvolvedListCahes: boolean;
-  };
-};
-
 type itemsInsertErrorAction<T extends entitiesContainerTemplate> = {
   type: "ITEMS_INSERT_ERROR";
   payload: {
@@ -186,7 +90,6 @@ type listErrorAction<T extends entitiesContainerTemplate, U extends keyof T> = {
 };
 
 export type repositoryActions<T extends entitiesContainerTemplate> =
-  | itemsInsertAction<T>
   | itemsInsertErrorAction<T>
   | listInsertAction<T, keyof T>
   | listErrorAction<T, keyof T>;
@@ -196,7 +99,7 @@ function getQueryAsString(parameter: Record<string, unknown>) {
 }
 
 export default <T extends entitiesContainerTemplate>(
-  context: Context<repositoryState<T>, repositoryActions<T>>
+  dataContext: Context<dataState<T> & repositoryState<T>, dataActions<T>>
 ) => {
   function getEntities(
     processingGroupedEnties: itemsInsertAction<T>["payload"]["items"],
@@ -323,7 +226,7 @@ export default <T extends entitiesContainerTemplate>(
                 type: "ITEMS_INSERT",
                 payload: {
                   items: this.insertedItems,
-                  invalidateInvolvedListCahes: false,
+                  invalidateInvolvedListCaches: false,
                 },
               } as itemsInsertAction<T>);
             }
@@ -352,7 +255,7 @@ export default <T extends entitiesContainerTemplate>(
         const queryString = getQueryAsString(request.parameter);
 
         const repositoryState = repository.getState();
-        const isLoading =
+        let isLoading =
           loadingLists.find(
             ([model, query]) => model === request.model && query === queryString
           ) !== undefined;
@@ -372,22 +275,37 @@ export default <T extends entitiesContainerTemplate>(
             };
           }
 
+          if (result.hasInvalidCache) {
+            isLoading = true;
+            fetchList(request);
+          }
+
           return {
             hasError: false,
-            hasCache: true,
-            hasInvalidCache: result.hasInvalidCache,
             isLoading,
-            items: result.ids.map((id) => ({
-              id: id,
-              model: request.model,
-            })),
+            items: result.ids
+              .filter(
+                (id) =>
+                  (repositoryState.entities[request.model]?.[idSerializer(id)]
+                    ?.isDeleted ===
+                    true) ===
+                  false
+              )
+              .map((id) => ({
+                id: id,
+                model: request.model,
+              })),
             totalCount: result.totalCount,
           };
         }
+
+        fetchList(request);
+
         return {
           hasError: false,
-          hasCache: false,
-          isLoading: isLoading,
+          isLoading: true,
+          items: [],
+          totalCount: 0,
         };
       };
 
@@ -419,24 +337,24 @@ export default <T extends entitiesContainerTemplate>(
 
           if (result.isDeleted) {
             return {
-              isDeleted: true,
-              hasError: false,
+              hasError: true,
+              error: new Error("The item was deleted"),
             };
           }
 
           return {
             hasError: false,
-            isDeleted: false,
-            hasCache: true,
             isLoading,
             item: result.payload,
           };
         }
+
+        fetchItem(request);
+
         return {
           hasError: false,
-          isDeleted: false,
-          hasCache: false,
-          isLoading: isLoading,
+          isLoading: true,
+          item: null,
         };
       };
 
@@ -517,14 +435,16 @@ export default <T extends entitiesContainerTemplate>(
         return result;
       }
 
-      const repository = store<repositoryState<T>, repositoryActions<T>>(
+      const repository = store<
+        dataState<T> & repositoryState<T>,
+        dataActions<T> | repositoryActions<T>
+      >(
         {
           entities: {},
           lists: {},
           getListCache,
           getItemCache,
-          fetchList,
-          fetchItem,
+          changeLog: [],
         },
         (previouState, action) => {
           switch (action.type) {
@@ -555,8 +475,7 @@ export default <T extends entitiesContainerTemplate>(
                 entities: newEntities,
                 getListCache,
                 getItemCache,
-                fetchList,
-                fetchItem,
+                changeLog: previouState.changeLog,
                 lists: {
                   ...previouState.lists,
                   [action.model]: {
@@ -581,8 +500,7 @@ export default <T extends entitiesContainerTemplate>(
                 entities: previouState.entities,
                 getListCache,
                 getItemCache,
-                fetchList,
-                fetchItem,
+                changeLog: previouState.changeLog,
                 lists: {
                   ...previouState.lists,
                   [action.model]: {
@@ -601,7 +519,7 @@ export default <T extends entitiesContainerTemplate>(
               getEntities(action.payload.items, newEntities); // This function mutates through reference the newEntities
 
               return {
-                lists: action.payload.invalidateInvolvedListCahes
+                lists: action.payload.invalidateInvolvedListCaches
                   ? mapObject(
                       previouState.lists,
                       (listContainer, model) =>
@@ -615,8 +533,7 @@ export default <T extends entitiesContainerTemplate>(
                   : previouState.lists,
                 getListCache,
                 getItemCache,
-                fetchList,
-                fetchItem,
+                changeLog: previouState.changeLog,
                 entities: newEntities,
               };
             }
@@ -641,11 +558,15 @@ export default <T extends entitiesContainerTemplate>(
                 lists: previouState.lists,
                 getListCache,
                 getItemCache,
-                fetchList,
-                fetchItem,
+                changeLog: previouState.changeLog,
                 entities: newEntities,
               };
             }
+
+            default:
+              throw new Error(
+                `such action is not allowed ${action.type} in the repository`
+              );
           }
         }
       );
@@ -653,12 +574,12 @@ export default <T extends entitiesContainerTemplate>(
       return (
         <repository.Observer>
           {(repositoryState) => (
-            <context.Provider
+            <dataContext.Provider
               state={repositoryState}
               dispatch={repository.dispatch}
             >
               <Props>{(props) => props.children}</Props>
-            </context.Provider>
+            </dataContext.Provider>
           )}
         </repository.Observer>
       );

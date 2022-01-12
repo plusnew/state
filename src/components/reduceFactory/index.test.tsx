@@ -25,15 +25,14 @@ describe("test reduce", () => {
   it("basic reduce test, with unloaded items", async () => {
     const callIdleCallbacks = registerRequestIdleCallback();
 
-    const { Repository, Branch, Reduce } =
-      stateFactory<{
-        blogPost: {
-          listParameter: {
-            sort: "asc" | "desc";
-          };
-          item: blogPostType;
+    const { Repository, Branch, Reduce } = stateFactory<{
+      blogPost: {
+        listParameter: {
+          sort: "asc" | "desc";
         };
-      }>();
+        item: blogPostType;
+      };
+    }>();
 
     const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
       items: [
@@ -113,15 +112,14 @@ describe("test reduce", () => {
   it("basic reduce test, with loading items", async () => {
     const callIdleCallbacks = registerRequestIdleCallback();
 
-    const { Repository, Branch, Reduce, Item } =
-      stateFactory<{
-        blogPost: {
-          listParameter: {
-            sort: "asc" | "desc";
-          };
-          item: blogPostType;
+    const { Repository, Branch, Reduce, Item } = stateFactory<{
+      blogPost: {
+        listParameter: {
+          sort: "asc" | "desc";
         };
-      }>();
+        item: blogPostType;
+      };
+    }>();
 
     const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
       items: [
@@ -207,15 +205,14 @@ describe("test reduce", () => {
   it("basic reduce test, with loaded items", async () => {
     const callIdleCallbacks = registerRequestIdleCallback();
 
-    const { Repository, Branch, Reduce, Item } =
-      stateFactory<{
-        blogPost: {
-          listParameter: {
-            sort: "asc" | "desc";
-          };
-          item: blogPostType;
+    const { Repository, Branch, Reduce, Item } = stateFactory<{
+      blogPost: {
+        listParameter: {
+          sort: "asc" | "desc";
         };
-      }>();
+        item: blogPostType;
+      };
+    }>();
 
     const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
       items: [
@@ -309,15 +306,14 @@ describe("test reduce", () => {
   });
 
   it("reduce with null-parameter, should not request data", async () => {
-    const { Repository, Branch, Reduce } =
-      stateFactory<{
-        blogPost: {
-          listParameter: {
-            sort: "asc" | "desc";
-          };
-          item: blogPostType;
+    const { Repository, Branch, Reduce } = stateFactory<{
+      blogPost: {
+        listParameter: {
+          sort: "asc" | "desc";
         };
-      }>();
+        item: blogPostType;
+      };
+    }>();
 
     const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
       items: [

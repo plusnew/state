@@ -1,13 +1,12 @@
-import plusnew, {
-  ApplicationElement,
-  Component,
-  Context,
-  Props,
-} from "@plusnew/core";
+import type { Context } from "@plusnew/core";
+import plusnew, { ApplicationElement, Component, Props } from "@plusnew/core";
 import type ComponentInstance from "@plusnew/core/src/instances/types/Component/Instance";
 import type { entitiesContainerTemplate } from "../../types";
-import type { branchActions, branchState } from "../branchFactory";
-import type { repositoryActions, repositoryState } from "../repositoryFactory";
+import type {
+  dataActions,
+  dataState,
+  repositoryState,
+} from "../../types/dataContext";
 import idSerializer from "../../util/idSerializer";
 
 type interact<T extends entitiesContainerTemplate, U extends keyof T> = {
@@ -47,8 +46,7 @@ type props<
 };
 
 export default <T extends entitiesContainerTemplate>(
-  repositoryContext: Context<repositoryState<T>, repositoryActions<T>>,
-  branchContext: Context<branchState<T>, branchActions<T>>
+  dataContext: Context<dataState<T> & repositoryState<T>, dataActions<T>>
 ) =>
   class Item<
     U extends keyof T,
@@ -59,8 +57,8 @@ export default <T extends entitiesContainerTemplate>(
       Props: Props<props<T, U, Id>>,
       componentInstance: ComponentInstance<any, any, any>
     ) {
-      const { dispatch: branchDispatch } =
-        branchContext.findProvider(componentInstance);
+      const { dispatch: dataDispatch } =
+        dataContext.findProvider(componentInstance);
 
       const interact: interact<T, U> = {
         commitAttributes: (attributes) => {
@@ -69,7 +67,7 @@ export default <T extends entitiesContainerTemplate>(
           if (id === null) {
             throw new Error("Can not commitAttributes with no current item");
           } else {
-            branchDispatch({
+            dataDispatch({
               type: "ATTRIBUTES_CHANGE",
               model: Props.getState().model,
               id: idSerializer(id as T[U]["item"]["id"]),
@@ -84,7 +82,7 @@ export default <T extends entitiesContainerTemplate>(
             throw new Error("Can not commitRelationships with no current item");
           }
 
-          branchDispatch({
+          dataDispatch({
             type: "RELATIONSHIPS_CHANGE",
             model: Props.getState().model,
             id: idSerializer(id as T[U]["item"]["id"]),
@@ -94,39 +92,37 @@ export default <T extends entitiesContainerTemplate>(
       };
 
       return (
-        <repositoryContext.Consumer>
-          {(_repositoryState) => (
-            <branchContext.Consumer>
-              {(branchState) => (
-                <Props>
-                  {(props) => {
-                    if (props.id === null) {
-                      return (
-                        (props.children as any)[0] as itemRenderProps<T, U, Id>
-                      )(
-                        { isLoading: false, isEmpty: true, item: null } as any,
-                        interact
-                      );
-                    } else {
-                      const view = branchState.getItem({
-                        model: props.model,
-                        id: props.id as T[U]["item"]["id"],
-                      });
+        <dataContext.Consumer>
+          {(dataState) => {
+            return (
+              <Props>
+                {(props) => {
+                  if (props.id === null) {
+                    return (
+                      (props.children as any)[0] as itemRenderProps<T, U, Id>
+                    )(
+                      { isLoading: false, isEmpty: true, item: null } as any,
+                      interact
+                    );
+                  } else {
+                    const view = dataState.getItemCache({
+                      model: props.model,
+                      id: props.id as T[U]["item"]["id"],
+                    });
 
-                      if (view.hasError) {
-                        throw view.error;
-                      }
-
-                      return (
-                        (props.children as any)[0] as itemRenderProps<T, U, Id>
-                      )({ isEmpty: false, ...view } as any, interact);
+                    if (view.hasError) {
+                      throw view.error;
                     }
-                  }}
-                </Props>
-              )}
-            </branchContext.Consumer>
-          )}
-        </repositoryContext.Consumer>
+
+                    return (
+                      (props.children as any)[0] as itemRenderProps<T, U, Id>
+                    )({ isEmpty: false, ...view } as any, interact);
+                  }
+                }}
+              </Props>
+            );
+          }}
+        </dataContext.Consumer>
       );
     }
   };

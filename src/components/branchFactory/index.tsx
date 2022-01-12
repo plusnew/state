@@ -1,91 +1,26 @@
+import type { Context } from "@plusnew/core";
 import plusnew, {
   ApplicationElement,
   Component,
-  Context,
   Props,
   store,
 } from "@plusnew/core";
 import type ComponentInstance from "@plusnew/core/src/instances/types/Component/Instance";
 import type Instance from "@plusnew/core/src/instances/types/Instance";
-import type { entitiesContainerTemplate, entityEmpty } from "../../types";
-import type { repositoryActions, repositoryState } from "../repositoryFactory";
+import type { entitiesContainerTemplate } from "../../types";
+import type {
+  dataActions,
+  dataState,
+  repositoryState,
+} from "../../types/dataContext";
 import idSerializer from "../../util/idSerializer";
-
-type changedAttributes<
-  T extends entitiesContainerTemplate,
-  U extends keyof T
-> = {
-  type: "ATTRIBUTES_CHANGE";
-  model: U;
-  id: string;
-  payload: Partial<T[U]["item"]["attributes"]>;
-};
-
-type changedRelationships<
-  T extends entitiesContainerTemplate,
-  U extends keyof T
-> = {
-  type: "RELATIONSHIPS_CHANGE";
-  model: U;
-  id: string;
-  payload: Partial<T[U]["item"]["relationships"]>;
-};
-
-type syncReadListRequest<
-  T extends entitiesContainerTemplate,
-  U extends keyof T
-> = (request: { model: U; parameter: T[U]["listParameter"] }) =>
-  | {
-      hasError: false;
-      isLoading: boolean;
-      items: T[U]["item"][] | entityEmpty<U, T[U]["item"]["id"]>[];
-      totalCount: number;
-    }
-  | {
-      hasError: true;
-      error: any;
-    };
-
-type syncReadItemRequest<
-  T extends entitiesContainerTemplate,
-  U extends keyof T
-> = (request: {
-  model: U;
-  id: T[U]["item"]["id"];
-}) =>
-  | { hasError: true; error: any }
-  | { hasError: false; isLoading: false; item: T[U]["item"] }
-  | { hasError: false; isLoading: true; item: T[U]["item"] | null };
-
-type changeLog<T extends entitiesContainerTemplate, U extends keyof T> =
-  | changedAttributes<T, U>
-  | changedRelationships<T, U>;
-
-export type branchState<T extends entitiesContainerTemplate> = {
-  changeLog: changeLog<T, keyof T>[];
-  currentChangePosition: number | null;
-  getList: syncReadListRequest<T, keyof T>;
-  getItem: syncReadItemRequest<T, keyof T>;
-};
-
-type resetChangelog<T extends entitiesContainerTemplate> = {
-  type: "RESET_CHANGELOG";
-  payload: {
-    [U in keyof T]: string[];
-  };
-};
-
-export type branchActions<T extends entitiesContainerTemplate> =
-  | changeLog<T, keyof T>
-  | resetChangelog<T>;
 
 type props = {
   children: ApplicationElement;
 };
 
 export default <T extends entitiesContainerTemplate>(
-  repositoryContext: Context<repositoryState<T>, repositoryActions<T>>,
-  branchContext: Context<branchState<T>, branchActions<T>>
+  dataContext: Context<dataState<T> & repositoryState<T>, dataActions<T>>
 ) =>
   class Branch extends Component<props> {
     static displayName = "StateBranch";
@@ -93,70 +28,24 @@ export default <T extends entitiesContainerTemplate>(
       Props: Props<props>,
       componentInstance: ComponentInstance<props, any, any>
     ) {
-      const repository = repositoryContext.findProvider(
+      const dataContextInstance = dataContext.findProvider(
         componentInstance as Instance<any, any>
       );
 
-      const getList: syncReadListRequest<T, keyof T> = (request) => {
-        const repositoryState = repository.getState();
+      const getListCache = dataContextInstance.getState().getListCache;
 
-        const result = repositoryState.getListCache(request);
-
-        if (result.hasError) {
-          return result;
-        }
-
-        if (result.hasCache) {
-          let isLoading = result.isLoading;
-          if (result.hasInvalidCache === true && isLoading === false) {
-            isLoading = true;
-            repositoryState.fetchList(request);
-          }
-
-          return {
-            hasError: false,
-            isLoading: isLoading,
-            items: result.items.filter((item) => {
-              const itemCache = repositoryState.getItemCache({
-                model: item.model,
-                id: item.id,
-              });
-
-              return !itemCache.isDeleted;
-            }),
-            totalCount: result.totalCount,
-          };
-        }
-
-        if (result.isLoading === false) {
-          repositoryState.fetchList(request);
-        }
-
-        return {
-          hasError: false,
-          isLoading: true,
-          items: [],
-          totalCount: 0,
-        };
-      };
-
-      const getItem: syncReadItemRequest<T, keyof T> = (request) => {
-        const repositoryState = repository.getState();
-        const result = repositoryState.getItemCache(request);
+      const getItemCache: dataState<T>["getItemCache"] = (request) => {
+        const dataState = dataContextInstance.getState();
+        const result = dataState.getItemCache(request);
         const requestId = idSerializer(request.id);
 
         if (result.hasError) {
           return result;
         }
 
-        if (result.isDeleted) {
-          return {
-            hasError: true,
-            error: new Error("The item was deleted"),
-          };
-        }
-
-        if (result.hasCache) {
+        if (result.item === null) {
+          return result;
+        } else {
           let attributeChanges = {};
           let relationshipChanges = {};
 
@@ -200,24 +89,13 @@ export default <T extends entitiesContainerTemplate>(
             },
           };
         }
-
-        if (result.isLoading === false) {
-          repositoryState.fetchItem(request);
-        }
-
-        return {
-          hasError: false,
-          isLoading: true,
-          item: null,
-        };
       };
 
-      const branchStore = store<branchState<T>, branchActions<T>>(
+      const branchStore = store<dataState<T>, dataActions<T>>(
         {
           changeLog: [],
-          currentChangePosition: null,
-          getList,
-          getItem,
+          getListCache,
+          getItemCache,
         },
         (previousState, action) => {
           switch (action.type) {
@@ -225,9 +103,8 @@ export default <T extends entitiesContainerTemplate>(
             case "RELATIONSHIPS_CHANGE":
               return {
                 changeLog: [...previousState.changeLog, action],
-                currentChangePosition: previousState.currentChangePosition,
-                getList,
-                getItem,
+                getListCache,
+                getItemCache,
               };
 
             case "RESET_CHANGELOG": {
@@ -239,13 +116,13 @@ export default <T extends entitiesContainerTemplate>(
                         (resetChangeId) => change.id === resetChangeId
                       ) !== undefined) === false
                 ),
-                currentChangePosition: previousState.currentChangePosition,
-                getList,
-                getItem,
+                getListCache,
+                getItemCache,
               };
             }
             default:
-              throw new Error("No such action");
+              dataContextInstance.dispatch(action);
+              return previousState;
           }
         }
       );
@@ -253,12 +130,16 @@ export default <T extends entitiesContainerTemplate>(
       return (
         <branchStore.Observer>
           {(branchState) => (
-            <branchContext.Provider
-              state={branchState}
-              dispatch={branchStore.dispatch}
-            >
-              <Props>{(props) => props.children}</Props>
-            </branchContext.Provider>
+            <dataContext.Consumer>
+              {(parentDataState) => (
+                <dataContext.Provider
+                  state={{ ...parentDataState, ...branchState }}
+                  dispatch={branchStore.dispatch}
+                >
+                  <Props>{(props) => props.children}</Props>
+                </dataContext.Provider>
+              )}
+            </dataContext.Consumer>
           )}
         </branchStore.Observer>
       );

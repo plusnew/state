@@ -19,15 +19,14 @@ describe("test statefactory", () => {
   it("basic", async () => {
     const callIdleCallbacks = registerRequestIdleCallback();
 
-    const { Repository, Branch, Item, List } =
-      stateFactory<{
-        blogPost: {
-          listParameter: {
-            sort: "asc" | "desc";
-          };
-          item: blogPostType;
+    const { Repository, Branch, Item, List } = stateFactory<{
+      blogPost: {
+        listParameter: {
+          sort: "asc" | "desc";
         };
-      }>();
+        item: blogPostType;
+      };
+    }>();
 
     const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
       items: [
@@ -102,15 +101,14 @@ describe("test statefactory", () => {
   });
 
   it("list fails", async () => {
-    const { Repository, Branch, List } =
-      stateFactory<{
-        blogPost: {
-          listParameter: {
-            sort: "asc" | "desc";
-          };
-          item: blogPostType;
+    const { Repository, Branch, List } = stateFactory<{
+      blogPost: {
+        listParameter: {
+          sort: "asc" | "desc";
         };
-      }>();
+        item: blogPostType;
+      };
+    }>();
 
     const wrapper = mount(
       <Repository
@@ -149,15 +147,14 @@ describe("test statefactory", () => {
   });
 
   it("item fails", async () => {
-    const { Repository, Branch, List, Item } =
-      stateFactory<{
-        blogPost: {
-          listParameter: {
-            sort: "asc" | "desc";
-          };
-          item: blogPostType;
+    const { Repository, Branch, List, Item } = stateFactory<{
+      blogPost: {
+        listParameter: {
+          sort: "asc" | "desc";
         };
-      }>();
+        item: blogPostType;
+      };
+    }>();
 
     const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
       items: [
@@ -224,15 +221,14 @@ describe("test statefactory", () => {
   });
 
   it("list request with loaded entities", async () => {
-    const { Repository, Branch, Item, List } =
-      stateFactory<{
-        blogPost: {
-          listParameter: {
-            sort: "asc" | "desc";
-          };
-          item: blogPostType;
+    const { Repository, Branch, Item, List } = stateFactory<{
+      blogPost: {
+        listParameter: {
+          sort: "asc" | "desc";
         };
-      }>();
+        item: blogPostType;
+      };
+    }>();
 
     const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
       items: [
@@ -312,15 +308,14 @@ describe("test statefactory", () => {
   it("Merge Deletions should remove entities of lists immidiatley, and invalidate their cache", async () => {
     const callIdleCallbacks = registerRequestIdleCallback();
 
-    const { Repository, Branch, Item, List, Merge } =
-      stateFactory<{
-        blogPost: {
-          listParameter: {
-            sort: "asc" | "desc";
-          };
-          item: blogPostType;
+    const { Repository, Branch, Item, List, Merge } = stateFactory<{
+      blogPost: {
+        listParameter: {
+          sort: "asc" | "desc";
         };
-      }>();
+        item: blogPostType;
+      };
+    }>();
 
     let listItems = [
       {
