@@ -1092,4 +1092,89 @@ describe("test item", () => {
     expect(wrapper.contains(<div>user-foo</div>)).toBe(true);
     expect(wrapper.contains(<div>user-bar</div>)).toBe(true);
   });
+
+  it("fetching should only happen once for each id", async () => {
+    const callIdleCallbacks = registerRequestIdleCallback();
+
+    const { Repository, Branch, Item } = stateFactory<{
+      blogPost: {
+        listParameter: {
+          sort: "asc" | "desc";
+        };
+        item: blogPostType;
+      };
+    }>();
+
+    const list = promiseHandler((_parameter: { sort: "asc" | "desc" }) => ({
+      items: [
+        {
+          id: "1",
+          model: "blogPost" as const,
+        },
+        {
+          id: "2",
+          model: "blogPost" as const,
+        },
+      ],
+      totalCount: 5,
+    }));
+
+    const item = promiseHandler((id: string) => ({
+      id: id,
+      model: "blogPost" as const,
+      attributes: {
+        name: `foo-${id}`,
+        counter: 0,
+      },
+      relationships: {
+        author: {
+          model: "user" as const,
+          id: "1",
+        },
+      },
+    }));
+
+    const wrapper = mount(
+      <Repository
+        requests={{
+          blogPost: {
+            readList: list.fn,
+            readItem: item.fn,
+          },
+        }}
+      >
+        <Branch>
+          <Item model="blogPost" id={"1"}>
+            {(view) =>
+              view.isLoading ? (
+                <span>item-loading</span>
+              ) : (
+                <h1>
+                  <span>{view.item.attributes.name}</span>
+                </h1>
+              )
+            }
+          </Item>
+          <Item model="blogPost" id={"1"}>
+            {(view) =>
+              view.isLoading ? (
+                <span>item-loading</span>
+              ) : (
+                <h2>
+                  <span>{view.item.attributes.name}</span>
+                </h2>
+              )
+            }
+          </Item>
+        </Branch>
+      </Repository>
+    );
+
+    await item.resolve();
+    callIdleCallbacks();
+
+    expect(wrapper.find("h1").contains(<span>foo-1</span>)).toBe(true);
+    expect(wrapper.find("h2").contains(<span>foo-1</span>)).toBe(true);
+    expect(item.fn).toHaveBeenCalledTimes(1);
+  });
 });

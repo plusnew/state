@@ -275,7 +275,7 @@ export default <T extends entitiesContainerTemplate>(
             };
           }
 
-          if (result.hasInvalidCache) {
+          if (result.hasInvalidCache && isLoading === false) {
             isLoading = true;
             fetchList(request);
           }
@@ -299,7 +299,9 @@ export default <T extends entitiesContainerTemplate>(
           };
         }
 
-        fetchList(request);
+        if (isLoading === false) {
+          fetchList(request);
+        }
 
         return {
           hasError: false,
@@ -349,7 +351,9 @@ export default <T extends entitiesContainerTemplate>(
           };
         }
 
-        fetchItem(request);
+        if (isLoading === false) {
+          fetchItem(request);
+        }
 
         return {
           hasError: false,
