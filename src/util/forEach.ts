@@ -3,9 +3,9 @@ export function mapObject<T, K>(
   callback: (propertyValue: T[keyof T], propertyName: keyof T) => K
 ) {
   const result: Partial<{ [key in keyof T]: K }> = {};
-  Object.entries(obj).forEach(([propertyName, propertyValue]) => {
+  Object.entries((obj as any)).forEach(([propertyName, propertyValue]) => {
     result[propertyName as keyof T] = callback(
-      propertyValue,
+      (propertyValue as any),
       propertyName as keyof T
     );
   });

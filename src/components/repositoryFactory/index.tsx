@@ -262,7 +262,7 @@ export default <T extends entitiesContainerTemplate>(
 
         if (
           repositoryState.lists[request.model] !== undefined &&
-          queryString in repositoryState.lists[request.model]
+          queryString in (repositoryState.lists as any)[request.model]
         ) {
           const result = (repositoryState.lists[request.model] as storeList)[
             queryString
@@ -323,7 +323,7 @@ export default <T extends entitiesContainerTemplate>(
 
         if (
           repositoryState.entities[request.model] !== undefined &&
-          requestId in repositoryState.entities[request.model]
+          requestId in (repositoryState.entities as any)[request.model]
         ) {
           const result: storeEntity<T, keyof T> = (
             repositoryState.entities[request.model] as any
